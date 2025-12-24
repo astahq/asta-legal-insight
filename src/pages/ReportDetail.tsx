@@ -99,25 +99,30 @@ const ReportDetail = () => {
   const toggleWatchlist = useMutation({
     mutationFn: async () => {
       if (isDemo) {
-        setDemoWatchlist(!demoWatchlist);
-        return;
+        // For demo, we toggle AFTER showing toast, so we need to check CURRENT state
+        const wasOnWatchlist = demoWatchlist;
+        setDemoWatchlist(!wasOnWatchlist);
+        return { wasOnWatchlist };
       }
-      if (!report) return;
+      if (!report) return { wasOnWatchlist: false };
+      const wasOnWatchlist = report.on_watchlist;
       const { error } = await supabase
         .from("reports")
-        .update({ on_watchlist: !report.on_watchlist })
+        .update({ on_watchlist: !wasOnWatchlist })
         .eq("id", report.id);
 
       if (error) throw error;
+      return { wasOnWatchlist };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       if (!isDemo) {
         queryClient.invalidateQueries({ queryKey: ["report", id] });
         queryClient.invalidateQueries({ queryKey: ["reports"] });
         queryClient.invalidateQueries({ queryKey: ["watchlist"] });
       }
+      const wasOnWatchlist = result?.wasOnWatchlist ?? false;
       toast({
-        title: (isDemo ? demoWatchlist : report?.on_watchlist)
+        title: wasOnWatchlist
           ? "Removed from watchlist"
           : "Added to watchlist",
       });
