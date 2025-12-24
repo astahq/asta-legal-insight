@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { demoReportAnalysis, ReportAnalysis, ReportIssue } from "@/lib/demoReportData";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function IssueBadge({ issue }: { issue: ReportIssue }) {
   const bgColor = {
@@ -95,6 +95,32 @@ const ReportDetail = () => {
     },
     enabled: !isDemo,
   });
+
+  // Subscribe to real-time updates for this report
+  useEffect(() => {
+    if (isDemo || !id) return;
+
+    const channel = supabase
+      .channel(`report-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'reports',
+          filter: `id=eq.${id}`,
+        },
+        (payload) => {
+          console.log('Report updated:', payload);
+          queryClient.invalidateQueries({ queryKey: ['report', id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, isDemo, queryClient]);
 
   const toggleWatchlist = useMutation({
     mutationFn: async () => {

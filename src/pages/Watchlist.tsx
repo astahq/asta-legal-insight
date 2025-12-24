@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Star, CheckCircle2, Clock, AlertCircle, Loader2, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -51,6 +52,31 @@ const Watchlist = () => {
       return data as Report[];
     },
   });
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('watchlist-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'reports',
+        },
+        (payload) => {
+          console.log('Realtime update:', payload);
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+          queryClient.invalidateQueries({ queryKey: ['reports'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const removeFromWatchlist = useMutation({
     mutationFn: async (id: string) => {
