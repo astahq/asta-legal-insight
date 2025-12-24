@@ -31,7 +31,6 @@ const mainNavItems: NavItem[] = [
 
 const bottomNavItems: NavItem[] = [
   { icon: Settings, label: "Billing & Settings", href: "/settings" },
-  { icon: HelpCircle, label: "Support", href: "/support" },
 ];
 
 export function Sidebar() {
@@ -101,6 +100,15 @@ export function Sidebar() {
               </Link>
             </li>
           ))}
+          <li>
+            <a 
+              href="mailto:hello@useasta.com" 
+              className="nav-item"
+            >
+              <HelpCircle className="w-5 h-5" />
+              <span>Support</span>
+            </a>
+          </li>
         </ul>
       </nav>
     </aside>

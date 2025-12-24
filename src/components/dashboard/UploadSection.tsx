@@ -1,10 +1,13 @@
 import { useState, useCallback } from "react";
-import { Upload, Info, ChevronRight, Pencil, Loader2, ExternalLink } from "lucide-react";
+import { Upload, Info, ChevronRight, Pencil, Loader2, ExternalLink, Star } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { firecrawlApi } from "@/lib/api/firecrawl";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface ScrapedProperty {
@@ -19,12 +22,15 @@ interface ScrapedProperty {
 
 export function UploadSection() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isDragging, setIsDragging] = useState(false);
   const [propertyUrl, setPropertyUrl] = useState("");
   const [isEditingUrl, setIsEditingUrl] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scrapedData, setScrapedData] = useState<ScrapedProperty | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [addToWatchlist, setAddToWatchlist] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -93,11 +99,55 @@ export function UploadSection() {
     }
   };
 
-  const handleAnalyze = () => {
-    console.log("Analyzing with URL:", propertyUrl);
-    console.log("Uploaded files:", uploadedFiles);
-    console.log("Scraped data:", scrapedData);
-    // Will process the analysis here
+  const handleAnalyze = async () => {
+    if (!scrapedData && uploadedFiles.length === 0) {
+      toast({
+        title: "No content to analyze",
+        description: "Please upload files or enter a property URL.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+
+    try {
+      // Extract property address from metadata or use a placeholder
+      const propertyAddress = scrapedData?.metadata?.title || 
+        scrapedData?.metadata?.description?.slice(0, 100) || 
+        uploadedFiles[0]?.name.replace(/\.[^/.]+$/, "") || 
+        "Property Analysis";
+
+      // Create a report in the database
+      const { error } = await supabase
+        .from('reports')
+        .insert([{
+          property_address: propertyAddress,
+          property_url: propertyUrl || null,
+          status: 'processing',
+          scraped_data: scrapedData as any || null,
+          on_watchlist: addToWatchlist,
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: addToWatchlist ? "Report created and added to watchlist" : "Report created",
+        description: "Your analysis is now processing.",
+      });
+
+      // Navigate to reports page
+      navigate('/reports');
+    } catch (error) {
+      console.error('Error creating report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
@@ -271,13 +321,34 @@ export function UploadSection() {
         </Card>
       )}
 
+      {/* Add to Watchlist Option */}
+      <div className="flex items-center space-x-2">
+        <Checkbox 
+          id="watchlist" 
+          checked={addToWatchlist}
+          onCheckedChange={(checked) => setAddToWatchlist(checked === true)}
+        />
+        <label
+          htmlFor="watchlist"
+          className="text-sm font-medium text-foreground cursor-pointer flex items-center gap-2"
+        >
+          <Star className="w-4 h-4 text-warning" />
+          Add to Watchlist
+        </label>
+      </div>
+
       {/* Analyze Button */}
       <Button 
         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-base font-medium"
         onClick={handleAnalyze}
-        disabled={isLoading || (uploadedFiles.length === 0 && !scrapedData)}
+        disabled={isLoading || isAnalyzing || (uploadedFiles.length === 0 && !scrapedData)}
       >
-        {isLoading ? (
+        {isAnalyzing ? (
+          <>
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            Creating report...
+          </>
+        ) : isLoading ? (
           <>
             <Loader2 className="w-5 h-5 mr-2 animate-spin" />
             Extracting property details...
