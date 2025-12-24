@@ -1,13 +1,92 @@
+import { useState, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { User, Bell, Shield, Palette } from "lucide-react";
+import { User, Bell, Shield, Camera, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useProfile } from "@/contexts/ProfileContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Settings = () => {
+  const { profile, updateProfile, loading: profileLoading } = useProfile();
+  const { user } = useAuth();
+  const [fullName, setFullName] = useState(profile.full_name || "");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Update local state when profile loads
+  useState(() => {
+    if (profile.full_name) {
+      setFullName(profile.full_name);
+    }
+  });
+
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await updateProfile({ full_name: fullName });
+      if (error) throw error;
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      toast.error("Failed to update profile");
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await updateProfile({ avatar_url: publicUrl });
+      if (updateError) throw updateError;
+
+      toast.success("Avatar updated successfully");
+    } catch (error) {
+      toast.error("Failed to upload avatar");
+      console.error(error);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const initials = (fullName || user?.email || "U")
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const email = user?.email || "";
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -25,26 +104,79 @@ const Settings = () => {
             </CardTitle>
             <CardDescription>Update your personal information</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" defaultValue="Jack" />
+          <CardContent className="space-y-6">
+            {/* Avatar */}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Avatar className="h-20 w-20">
+                  {profile.avatar_url && (
+                    <AvatarImage src={profile.avatar_url} alt={fullName} />
+                  )}
+                  <AvatarFallback className="bg-muted text-muted-foreground text-xl font-medium">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <button
+                  onClick={handleAvatarClick}
+                  disabled={isUploadingAvatar}
+                  className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {isUploadingAvatar ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" defaultValue="Williams" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Profile Photo</p>
+                <p className="text-xs text-muted-foreground">Click the camera icon to upload a new photo</p>
               </div>
             </div>
+
+            <Separator />
+
+            {/* Full Name */}
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            {/* Email (read-only) */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" defaultValue="jack@example.com" />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                disabled
+                className="bg-muted/50"
+              />
+              <p className="text-xs text-muted-foreground">Email is linked to your login and cannot be changed here</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="company">Company (Optional)</Label>
-              <Input id="company" placeholder="Your company name" />
-            </div>
-            <Button>Save Changes</Button>
+
+            <Button onClick={handleSaveChanges} disabled={isSaving || profileLoading}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </CardContent>
         </Card>
 
@@ -67,11 +199,14 @@ const Settings = () => {
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">Auction reminders</p>
-                <p className="text-xs text-muted-foreground">Get notified before auctions on your watchlist</p>
+              <div className="flex items-center gap-2">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Auction reminders</p>
+                  <p className="text-xs text-muted-foreground">Get notified before auctions on your watchlist</p>
+                </div>
+                <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
               </div>
-              <Switch defaultChecked />
+              <Switch disabled />
             </div>
             <Separator />
             <div className="flex items-center justify-between">
@@ -100,14 +235,6 @@ const Settings = () => {
                 <p className="text-xs text-muted-foreground">Last changed 3 months ago</p>
               </div>
               <Button variant="outline" size="sm">Change Password</Button>
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">Two-factor authentication</p>
-                <p className="text-xs text-muted-foreground">Add an extra layer of security</p>
-              </div>
-              <Button variant="outline" size="sm">Enable</Button>
             </div>
           </CardContent>
         </Card>
