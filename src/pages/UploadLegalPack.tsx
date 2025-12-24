@@ -3,7 +3,7 @@ import { UploadSection } from "@/components/dashboard/UploadSection";
 
 const UploadLegalPack = () => {
   return (
-    <DashboardLayout userName="Jack Williams">
+    <DashboardLayout>
       <div className="max-w-4xl mx-auto">
         <UploadSection />
       </div>

@@ -47,6 +47,30 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           analysis_result: Json | null
@@ -58,6 +82,7 @@ export type Database = {
           scraped_data: Json | null
           status: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           analysis_result?: Json | null
@@ -69,6 +94,7 @@ export type Database = {
           scraped_data?: Json | null
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           analysis_result?: Json | null
@@ -80,6 +106,7 @@ export type Database = {
           scraped_data?: Json | null
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

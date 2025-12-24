@@ -6,7 +6,7 @@ import { AuctionCalendar } from "@/components/dashboard/AuctionCalendar";
 
 const Index = () => {
   return (
-    <DashboardLayout userName="Jack Williams">
+    <DashboardLayout>
       <div className="space-y-6 max-w-7xl">
         {/* Stats Section */}
         <StatsCards />

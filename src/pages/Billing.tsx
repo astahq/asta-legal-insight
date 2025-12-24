@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 
 const Billing = () => {
   return (
-    <DashboardLayout userName="Jack Williams">
+    <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Billing</h1>
