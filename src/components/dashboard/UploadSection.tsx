@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { firecrawlApi } from "@/lib/api/firecrawl";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ScrapedProperty {
   title?: string;
@@ -23,6 +24,7 @@ interface ScrapedProperty {
 export function UploadSection() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isDragging, setIsDragging] = useState(false);
   const [propertyUrl, setPropertyUrl] = useState("");
   const [isEditingUrl, setIsEditingUrl] = useState(false);
@@ -127,6 +129,7 @@ export function UploadSection() {
           status: 'processing',
           scraped_data: scrapedData as any || null,
           on_watchlist: addToWatchlist,
+          user_id: user?.id,
         }]);
 
       if (error) throw error;

@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 
 const Settings = () => {
   return (
-    <DashboardLayout userName="Jack Williams">
+    <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Settings</h1>
