@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,15 +13,87 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, documentContext, reportId } = await req.json();
+    const { messages, reportId } = await req.json();
     
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is not configured');
     }
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     console.log(`Document chat request for report: ${reportId}`);
-    console.log(`Document context length: ${documentContext?.length || 0} chars`);
+
+    // Fetch report and its documents from database
+    const { data: report, error: reportError } = await supabase
+      .from('reports')
+      .select('property_address, scraped_data')
+      .eq('id', reportId)
+      .single();
+
+    if (reportError) {
+      console.error('Error fetching report:', reportError);
+      throw new Error('Report not found');
+    }
+
+    // Fetch documents for this report
+    const { data: documents, error: docsError } = await supabase
+      .from('documents')
+      .select('file_name, extracted_text')
+      .eq('report_id', reportId);
+
+    if (docsError) {
+      console.error('Error fetching documents:', docsError);
+    }
+
+    // Fetch report sections
+    const { data: sections, error: sectionsError } = await supabase
+      .from('report_sections')
+      .select('section_key, content')
+      .eq('report_id', reportId);
+
+    if (sectionsError) {
+      console.error('Error fetching sections:', sectionsError);
+    }
+
+    // Build document context from actual database records
+    let documentContext = `Property: ${report.property_address}\n\n`;
+
+    // Add scraped data if available
+    if (report.scraped_data) {
+      const scraped = report.scraped_data as { markdown?: string; metadata?: { title?: string; description?: string } };
+      if (scraped.metadata?.description) {
+        documentContext += `Listing Description: ${scraped.metadata.description}\n\n`;
+      }
+      if (scraped.markdown) {
+        documentContext += `Listing Content:\n${scraped.markdown.slice(0, 10000)}\n\n`;
+      }
+    }
+
+    // Add extracted document text
+    if (documents && documents.length > 0) {
+      documentContext += `Documents in this legal pack:\n`;
+      for (const doc of documents) {
+        documentContext += `\n--- ${doc.file_name} ---\n`;
+        if (doc.extracted_text) {
+          documentContext += `${doc.extracted_text.slice(0, 15000)}\n`;
+        } else {
+          documentContext += `(Text not yet extracted)\n`;
+        }
+      }
+    }
+
+    // Add analysis sections
+    if (sections && sections.length > 0) {
+      documentContext += `\n\nAnalysis Results:\n`;
+      for (const section of sections) {
+        documentContext += `\n[${section.section_key}]\n${section.content}\n`;
+      }
+    }
+
+    console.log(`Document context length: ${documentContext.length} chars`);
     console.log(`Messages count: ${messages?.length || 0}`);
 
     // Build system prompt with document context
@@ -33,7 +106,7 @@ ${documentContext}
 Instructions:
 - Answer questions based ONLY on the document information provided above
 - Be specific and cite document names when referencing information
-- If information is not available in the documents, clearly state that
+- If information is not available in the documents, clearly state "I don't have enough information about that in the provided documents"
 - Highlight any risks, concerns, or important findings
 - Be concise but thorough
 - Use plain language to explain legal terms when needed

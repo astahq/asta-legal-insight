@@ -219,7 +219,6 @@ const ReportDetail = () => {
             </Button>
             <DocumentChat
               reportId={id || "demo"}
-              documents={analysis.documents}
               propertyAddress={propertyAddress}
             />
           </div>

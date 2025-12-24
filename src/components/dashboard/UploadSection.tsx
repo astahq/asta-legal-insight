@@ -111,6 +111,15 @@ export function UploadSection() {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to analyze documents.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsAnalyzing(true);
 
     try {
@@ -120,8 +129,8 @@ export function UploadSection() {
         uploadedFiles[0]?.name.replace(/\.[^/.]+$/, "") || 
         "Property Analysis";
 
-      // Create a report in the database
-      const { error } = await supabase
+      // 1. Create a report in the database
+      const { data: reportData, error: reportError } = await supabase
         .from('reports')
         .insert([{
           property_address: propertyAddress,
@@ -129,18 +138,64 @@ export function UploadSection() {
           status: 'processing',
           scraped_data: scrapedData as any || null,
           on_watchlist: addToWatchlist,
-          user_id: user?.id,
-        }]);
+          user_id: user.id,
+          documents_count: uploadedFiles.length,
+        }])
+        .select('id')
+        .single();
 
-      if (error) throw error;
+      if (reportError) throw reportError;
+      
+      const reportId = reportData.id;
+      console.log('Created report:', reportId);
+
+      // 2. Upload files to Supabase Storage and create document records
+      for (const file of uploadedFiles) {
+        const filePath = `${user.id}/${reportId}/${file.name}`;
+        
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from('legal-packs')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          // Continue with other files even if one fails
+          continue;
+        }
+
+        // Create document record (text extraction will happen in edge function)
+        await supabase.from('documents').insert({
+          report_id: reportId,
+          user_id: user.id,
+          file_path: filePath,
+          file_name: file.name,
+          mime_type: file.type,
+          size_bytes: file.size,
+          extracted_text: '', // Will be populated by edge function
+        });
+      }
+
+      // 3. Trigger the processing edge function
+      const { error: processError } = await supabase.functions.invoke('process-legal-pack', {
+        body: { reportId, userId: user.id },
+      });
+
+      if (processError) {
+        console.error('Process error:', processError);
+        // Don't throw - report is created, processing may still work
+      }
 
       toast({
         title: addToWatchlist ? "Report created and added to watchlist" : "Report created",
-        description: "Your analysis is now processing.",
+        description: "Your analysis is now processing. You'll see results shortly.",
       });
 
-      // Navigate to reports page
-      navigate('/reports');
+      // Navigate to the report detail page
+      navigate(`/reports/${reportId}`);
     } catch (error) {
       console.error('Error creating report:', error);
       toast({
@@ -151,7 +206,7 @@ export function UploadSection() {
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }
 
   return (
     <div className="space-y-6">

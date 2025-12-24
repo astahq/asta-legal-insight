@@ -47,6 +47,56 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: {
+          created_at: string
+          extracted_at: string | null
+          extracted_text: string
+          file_name: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          report_id: string
+          size_bytes: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extracted_at?: string | null
+          extracted_text?: string
+          file_name: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          report_id: string
+          size_bytes?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extracted_at?: string | null
+          extracted_text?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          report_id?: string
+          size_bytes?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -73,6 +123,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      report_sections: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          report_id: string
+          section_key: string
+          sources: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          report_id: string
+          section_key: string
+          sources?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          report_id?: string
+          section_key?: string
+          sources?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_sections_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reports: {
         Row: {
