@@ -1,13 +1,15 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Star, Download, FileText, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { Star, Download, FileText, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { demoReportAnalysis, ReportAnalysis, ReportIssue } from "@/lib/demoReportData";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 function IssueBadge({ issue }: { issue: ReportIssue }) {
   const bgColor = {
@@ -77,6 +79,8 @@ const ReportDetail = () => {
   const queryClient = useQueryClient();
   const isDemo = id === 'demo';
   const [demoWatchlist, setDemoWatchlist] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const { data: report, isLoading, error } = useQuery({
     queryKey: ['report', id],
@@ -137,6 +141,54 @@ const ReportDetail = () => {
 
   const onWatchlist = isDemo ? demoWatchlist : report?.on_watchlist;
 
+  const handleExportPDF = async () => {
+    if (!reportRef.current) return;
+    
+    setIsExporting(true);
+    toast({ title: "Generating PDF...", description: "Please wait while we prepare your report." });
+
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const fileName = `${propertyAddress.replace(/[^a-zA-Z0-9]/g, '_')}_Report.pdf`;
+      pdf.save(fileName);
+
+      toast({ title: "PDF Downloaded", description: "Your report has been saved successfully." });
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast({ 
+        title: "Export Failed", 
+        description: "There was an error generating the PDF. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (isLoading && !isDemo) {
     return (
       <DashboardLayout>
@@ -164,7 +216,7 @@ const ReportDetail = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-5xl">
+      <div ref={reportRef} className="space-y-6 max-w-5xl bg-background p-1">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
@@ -185,9 +237,17 @@ const ReportDetail = () => {
               <Star className={cn("w-4 h-4 mr-2", onWatchlist && "fill-current")} />
               {onWatchlist ? "On Watchlist" : "Add to Watchlist"}
             </Button>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
+            <Button 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              onClick={handleExportPDF}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              {isExporting ? "Exporting..." : "Download PDF"}
             </Button>
           </div>
         </div>
