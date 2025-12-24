@@ -121,8 +121,8 @@ const Reports = () => {
                         </Button>
                       </td>
                       <td className="p-4">
-                        <Button variant="outline" size="sm">
-                          View Report
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/reports/${report.id}`}>View Report</Link>
                         </Button>
                       </td>
                     </tr>
