@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { User, Bell, Shield, Camera, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,17 +17,17 @@ import { toast } from "sonner";
 const Settings = () => {
   const { profile, updateProfile, loading: profileLoading } = useProfile();
   const { user } = useAuth();
-  const [fullName, setFullName] = useState(profile.full_name || "");
+  const [fullName, setFullName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Update local state when profile loads
-  useState(() => {
+  useEffect(() => {
     if (profile.full_name) {
       setFullName(profile.full_name);
     }
-  });
+  }, [profile.full_name]);
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
