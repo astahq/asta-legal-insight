@@ -1,4 +1,5 @@
 import { Search, Bell, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -36,9 +37,11 @@ export function Header({ userName }: HeaderProps) {
         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
           <Bell className="w-5 h-5" />
         </Button>
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Plus className="w-4 h-4 mr-2" />
-          New Property Analysis
+        <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Link to="/upload">
+            <Plus className="w-4 h-4 mr-2" />
+            New Property Analysis
+          </Link>
         </Button>
       </div>
     </header>
