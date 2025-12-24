@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Star, Download, FileText, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { Star, FileText, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { demoReportAnalysis, ReportAnalysis, ReportIssue } from "@/lib/demoReportData";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { DocumentChat } from "@/components/report/DocumentChat";
 
 function IssueBadge({ issue }: { issue: ReportIssue }) {
   const bgColor = {
@@ -167,11 +168,6 @@ const ReportDetail = () => {
 
   const onWatchlist = isDemo ? demoWatchlist : report?.on_watchlist;
 
-  const handlePrint = () => {
-    window.print();
-    toast({ title: "Print dialog opened", description: "Use your browser print dialog to save as PDF." });
-  };
-
   if (isLoading && !isDemo) {
     return (
       <DashboardLayout>
@@ -221,13 +217,11 @@ const ReportDetail = () => {
               <Star className={cn("w-4 h-4 mr-2", onWatchlist && "fill-current")} />
               {onWatchlist ? "On Watchlist" : "Add to Watchlist"}
             </Button>
-            <Button
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={handlePrint}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
-            </Button>
+            <DocumentChat
+              reportId={id || "demo"}
+              documents={analysis.documents}
+              propertyAddress={propertyAddress}
+            />
           </div>
         </div>
 
