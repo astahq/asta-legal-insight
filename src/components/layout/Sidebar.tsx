@@ -6,12 +6,12 @@ import {
   Bell, 
   Settings, 
   HelpCircle,
-  Plus,
-  Home
+  Plus
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import astaLogo from "@/assets/asta-logo.png";
 
 interface NavItem {
   icon: React.ElementType;
@@ -41,8 +41,8 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-4 border-b border-sidebar-border">
         <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Home className="w-4 h-4 text-primary-foreground" />
+          <div className="w-8 h-8 flex items-center justify-center">
+            <img src={astaLogo} alt="Asta" className="w-8 h-8 object-contain" />
           </div>
           <span className="font-semibold text-sidebar-foreground">Property Bidding Assistant</span>
         </Link>
