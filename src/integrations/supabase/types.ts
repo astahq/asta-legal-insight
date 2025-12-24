@@ -78,10 +78,12 @@ export type Database = {
         Row: {
           analysis_result: Json | null
           created_at: string
+          documents_count: number | null
           id: string
           on_watchlist: boolean
           property_address: string
           property_url: string | null
+          property_value: number | null
           scraped_data: Json | null
           status: string
           updated_at: string
@@ -90,10 +92,12 @@ export type Database = {
         Insert: {
           analysis_result?: Json | null
           created_at?: string
+          documents_count?: number | null
           id?: string
           on_watchlist?: boolean
           property_address: string
           property_url?: string | null
+          property_value?: number | null
           scraped_data?: Json | null
           status?: string
           updated_at?: string
@@ -102,10 +106,12 @@ export type Database = {
         Update: {
           analysis_result?: Json | null
           created_at?: string
+          documents_count?: number | null
           id?: string
           on_watchlist?: boolean
           property_address?: string
           property_url?: string | null
+          property_value?: number | null
           scraped_data?: Json | null
           status?: string
           updated_at?: string
