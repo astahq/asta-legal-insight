@@ -1,7 +1,7 @@
 import { Search, Bell, Plus, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -13,9 +13,10 @@ import {
 
 interface HeaderProps {
   userName: string;
+  avatarUrl?: string | null;
 }
 
-export function Header({ userName }: HeaderProps) {
+export function Header({ userName, avatarUrl }: HeaderProps) {
   const { signOut } = useAuth();
 
   const initials = userName
@@ -33,6 +34,7 @@ export function Header({ userName }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
               <Avatar className="h-10 w-10 bg-muted">
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={userName} />}
                 <AvatarFallback className="bg-muted text-muted-foreground font-medium">
                   {initials}
                 </AvatarFallback>
