@@ -9,6 +9,7 @@ import {
   Plus,
   Home
 } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -16,13 +17,12 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   href: string;
-  active?: boolean;
   badge?: string;
   badgeColor?: string;
 }
 
 const mainNavItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/", active: true },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: FileText, label: "Reports", href: "/reports" },
   { icon: Star, label: "Watchlist", href: "/watchlist" },
   { icon: GitCompare, label: "Compare Properties", href: "/compare", badge: "NEW", badgeColor: "bg-primary text-primary-foreground" },
@@ -35,23 +35,27 @@ const bottomNavItems: NavItem[] = [
 ];
 
 export function Sidebar() {
+  const location = useLocation();
+
   return (
     <aside className="w-64 h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
       {/* Logo */}
       <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <Home className="w-4 h-4 text-primary-foreground" />
           </div>
           <span className="font-semibold text-sidebar-foreground">Property Bidding Assistant</span>
-        </div>
+        </Link>
       </div>
 
       {/* New Analysis Button */}
       <div className="p-4">
-        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Plus className="w-4 h-4 mr-2" />
-          New Property Analysis
+        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Link to="/upload">
+            <Plus className="w-4 h-4 mr-2" />
+            New Property Analysis
+          </Link>
         </Button>
       </div>
 
@@ -60,11 +64,11 @@ export function Sidebar() {
         <ul className="space-y-1">
           {mainNavItems.map((item) => (
             <li key={item.label}>
-              <a
-                href={item.href}
+              <Link
+                to={item.href}
                 className={cn(
                   "nav-item",
-                  item.active && "nav-item-active"
+                  location.pathname === item.href && "nav-item-active"
                 )}
               >
                 <item.icon className="w-5 h-5" />
@@ -74,7 +78,7 @@ export function Sidebar() {
                     {item.badge}
                   </span>
                 )}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
@@ -85,10 +89,16 @@ export function Sidebar() {
         <ul className="space-y-1">
           {bottomNavItems.map((item) => (
             <li key={item.label}>
-              <a href={item.href} className="nav-item">
+              <Link 
+                to={item.href} 
+                className={cn(
+                  "nav-item",
+                  location.pathname === item.href && "nav-item-active"
+                )}
+              >
                 <item.icon className="w-5 h-5" />
                 <span>{item.label}</span>
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
