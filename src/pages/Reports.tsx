@@ -19,6 +19,15 @@ interface Report {
   created_at: string;
 }
 
+const demoReport: Report = {
+  id: 'demo',
+  property_address: '22 Carslake Road, Wandsworth, London, SW15 3DP',
+  property_url: null,
+  status: 'completed',
+  on_watchlist: false,
+  created_at: new Date().toISOString(),
+};
+
 function StatusBadge({ status }: { status: string }) {
   const config = {
     processing: { icon: Clock, class: "status-processing", label: "Processing" },
@@ -86,7 +95,7 @@ const Reports = () => {
             <div className="flex items-center justify-center p-12">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-          ) : reports && reports.length > 0 ? (
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -99,7 +108,29 @@ const Reports = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {reports.map((report) => (
+                  {/* Demo Report Row */}
+                  <tr className="border-b border-border hover:bg-muted/50 bg-primary/5">
+                    <td className="p-4 text-sm text-foreground flex items-center gap-2">
+                      {demoReport.property_address}
+                      <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">Demo</Badge>
+                    </td>
+                    <td className="p-4 text-sm text-muted-foreground">
+                      {format(new Date(demoReport.created_at), 'dd/MM/yyyy')}
+                    </td>
+                    <td className="p-4">
+                      <StatusBadge status={demoReport.status} />
+                    </td>
+                    <td className="p-4">
+                      <Star className="w-4 h-4 text-muted-foreground" />
+                    </td>
+                    <td className="p-4">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to="/reports/demo">View Report</Link>
+                      </Button>
+                    </td>
+                  </tr>
+                  {/* User Reports */}
+                  {reports?.map((report) => (
                     <tr key={report.id} className="border-b border-border last:border-0 hover:bg-muted/50">
                       <td className="p-4 text-sm text-foreground">{report.property_address}</td>
                       <td className="p-4 text-sm text-muted-foreground">
@@ -129,15 +160,6 @@ const Reports = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center p-12 text-center">
-              <FileText className="w-12 h-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No reports yet</h3>
-              <p className="text-muted-foreground mb-4">Upload your first legal pack to get started</p>
-              <Button asChild>
-                <Link to="/upload">Create Your First Report</Link>
-              </Button>
             </div>
           )}
         </div>
