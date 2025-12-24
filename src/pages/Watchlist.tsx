@@ -104,8 +104,8 @@ const Watchlist = () => {
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm">
-                            View Report
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to={`/reports/${report.id}`}>View Report</Link>
                           </Button>
                           <Button
                             variant="ghost"
