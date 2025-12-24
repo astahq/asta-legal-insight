@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Document } from "@/lib/demoReportData";
 
 interface Message {
   role: "user" | "assistant";
@@ -14,24 +13,17 @@ interface Message {
 
 interface DocumentChatProps {
   reportId: string;
-  documents: Document[];
   propertyAddress: string;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/document-chat`;
 
-export function DocumentChat({ reportId, documents, propertyAddress }: DocumentChatProps) {
+export function DocumentChat({ reportId, propertyAddress }: DocumentChatProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Build document context from the report
-  const documentContext = `Property: ${propertyAddress}
-
-Documents in this legal pack:
-${documents.map((doc, i) => `${i + 1}. ${doc.name} (${doc.pages} pages) - Key findings: ${doc.keyFindings}`).join("\n")}`;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -71,7 +63,6 @@ ${documents.map((doc, i) => `${i + 1}. ${doc.name} (${doc.pages} pages) - Key fi
         },
         body: JSON.stringify({
           messages: [...messages, userMessage],
-          documentContext,
           reportId,
         }),
       });
