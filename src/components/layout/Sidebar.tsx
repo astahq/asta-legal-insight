@@ -19,6 +19,7 @@ interface NavItem {
   href: string;
   badge?: string;
   badgeColor?: string;
+  disabled?: boolean;
 }
 
 const mainNavItems: NavItem[] = [
@@ -26,7 +27,7 @@ const mainNavItems: NavItem[] = [
   { icon: FileText, label: "Reports", href: "/reports" },
   { icon: Star, label: "Watchlist", href: "/watchlist" },
   { icon: GitCompare, label: "Compare Properties", href: "/compare", badge: "NEW", badgeColor: "bg-primary text-primary-foreground" },
-  { icon: Bell, label: "Auction Alerts", href: "/alerts", badge: "coming soon", badgeColor: "bg-destructive/10 text-destructive" },
+  { icon: Bell, label: "Auction Alerts", href: "/alerts", badge: "coming soon", badgeColor: "bg-destructive/10 text-destructive", disabled: true },
 ];
 
 const bottomNavItems: NavItem[] = [
@@ -63,21 +64,35 @@ export function Sidebar() {
         <ul className="space-y-1">
           {mainNavItems.map((item) => (
             <li key={item.label}>
-              <Link
-                to={item.href}
-                className={cn(
-                  "nav-item",
-                  location.pathname === item.href && "nav-item-active"
-                )}
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="flex-1">{item.label}</span>
-                {item.badge && (
-                  <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium", item.badgeColor)}>
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
+              {item.disabled ? (
+                <span
+                  className="nav-item opacity-50 cursor-not-allowed"
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge && (
+                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium", item.badgeColor)}>
+                      {item.badge}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <Link
+                  to={item.href}
+                  className={cn(
+                    "nav-item",
+                    location.pathname === item.href && "nav-item-active"
+                  )}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge && (
+                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium", item.badgeColor)}>
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              )}
             </li>
           ))}
         </ul>
