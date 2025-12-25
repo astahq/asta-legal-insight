@@ -14,6 +14,7 @@ import ReportDetail from "./pages/ReportDetail";
 import Watchlist from "./pages/Watchlist";
 import Billing from "./pages/Billing";
 import Settings from "./pages/Settings";
+import CompareProperties from "./pages/CompareProperties";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/watchlist" element={<ProtectedRoute><Watchlist /></ProtectedRoute>} />
               <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/compare" element={<ProtectedRoute><CompareProperties /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </ProfileProvider>
