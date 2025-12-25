@@ -68,12 +68,6 @@ export function Header({ userName, avatarUrl }: HeaderProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-          <Search className="w-5 h-5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-          <Bell className="w-5 h-5" />
-        </Button>
         <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <Link to="/upload">
             <Plus className="w-4 h-4 mr-2" />
