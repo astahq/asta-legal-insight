@@ -101,13 +101,16 @@ export function Sidebar() {
             </li>
           ))}
           <li>
-            <a 
-              href="mailto:hello@useasta.com" 
-              className="nav-item"
+            <Link 
+              to="/support" 
+              className={cn(
+                "nav-item",
+                location.pathname === "/support" && "nav-item-active"
+              )}
             >
               <HelpCircle className="w-5 h-5" />
               <span>Support</span>
-            </a>
+            </Link>
           </li>
         </ul>
       </nav>
