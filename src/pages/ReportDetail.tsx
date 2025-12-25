@@ -1,8 +1,9 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Star, FileText, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { Star, FileText, Loader2, AlertCircle, CheckCircle, Pencil, Check, X } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { demoReportAnalysis, ReportAnalysis, ReportIssue } from "@/lib/demoReportData";
@@ -80,6 +81,8 @@ const ReportDetail = () => {
   const queryClient = useQueryClient();
   const isDemo = id === "demo";
   const [demoWatchlist, setDemoWatchlist] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
 
   const { data: report, isLoading, error } = useQuery({
     queryKey: ["report", id],
@@ -156,6 +159,37 @@ const ReportDetail = () => {
     },
   });
 
+  const updateReportName = useMutation({
+    mutationFn: async (newName: string) => {
+      if (isDemo || !report) return;
+      const { error } = await supabase
+        .from("reports")
+        .update({ property_address: newName })
+        .eq("id", report.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["report", id] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
+      setIsEditingName(false);
+      toast({ title: "Report name updated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update name", variant: "destructive" });
+    },
+  });
+
+  const handleSaveName = () => {
+    if (editedName.trim()) {
+      updateReportName.mutate(editedName.trim());
+    }
+  };
+
+  const handleStartEdit = () => {
+    setEditedName(propertyAddress);
+    setIsEditingName(true);
+  };
+
   const analysis: ReportAnalysis = isDemo
     ? demoReportAnalysis
     : (report?.analysis_result as unknown as ReportAnalysis) || demoReportAnalysis;
@@ -197,10 +231,52 @@ const ReportDetail = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-5xl">
+        <div className="space-y-6 max-w-5xl">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{propertyAddress}</h1>
+            {isEditingName && !isDemo ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  className="text-xl font-bold h-10 w-80"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveName();
+                    if (e.key === "Escape") setIsEditingName(false);
+                  }}
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleSaveName}
+                  disabled={updateReportName.isPending}
+                >
+                  <Check className="w-4 h-4 text-success" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setIsEditingName(false)}
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 group">
+                <h1 className="text-2xl font-bold text-foreground">{propertyAddress}</h1>
+                {!isDemo && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={handleStartEdit}
+                  >
+                    <Pencil className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                )}
+              </div>
+            )}
             {propertySubtitle && (
               <p className="text-muted-foreground">{propertySubtitle}</p>
             )}
