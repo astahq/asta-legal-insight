@@ -6,12 +6,14 @@ import {
   Bell, 
   Settings, 
   HelpCircle,
-  Plus
+  Plus,
+  LogOut
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import astaLogo from "@/assets/asta-logo.png";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   icon: React.ElementType;
@@ -36,6 +38,13 @@ const bottomNavItems: NavItem[] = [
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
 
   return (
     <aside className="w-64 h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
@@ -126,6 +135,15 @@ export function Sidebar() {
               <HelpCircle className="w-5 h-5" />
               <span>Support</span>
             </Link>
+          </li>
+          <li>
+            <button 
+              onClick={handleSignOut}
+              className="nav-item w-full text-left text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Exit</span>
+            </button>
           </li>
         </ul>
       </nav>
