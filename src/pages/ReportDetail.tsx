@@ -219,9 +219,58 @@ const ReportDetail = () => {
 
   const onWatchlist = isDemo ? demoWatchlist : report?.on_watchlist;
 
-  const analysis: ReportAnalysis | null = isDemo
+// Helper to ensure issues array exists
+  const ensureIssues = (issues?: ReportIssue[]): ReportIssue[] => issues || [];
+  
+  const rawAnalysis: ReportAnalysis | null = isDemo
     ? demoReportAnalysis
     : (report?.analysis_result as unknown as ReportAnalysis) || null;
+  
+  // Create a safe analysis object with default empty arrays for issues
+  const analysis: ReportAnalysis | null = rawAnalysis ? {
+    ...rawAnalysis,
+    title: {
+      issues: ensureIssues(rawAnalysis.title?.issues),
+      description: rawAnalysis.title?.description || "",
+    },
+    ownership: {
+      issues: ensureIssues(rawAnalysis.ownership?.issues),
+    },
+    chargesAndMoney: {
+      charges: rawAnalysis.chargesAndMoney?.charges || [],
+      issues: ensureIssues(rawAnalysis.chargesAndMoney?.issues),
+    },
+    covenants: rawAnalysis.covenants || "Unknown",
+    tenure: rawAnalysis.tenure || "Unknown",
+    planningAndDevelopment: {
+      issues: ensureIssues(rawAnalysis.planningAndDevelopment?.issues),
+    },
+    completionAndPenaltyRisks: {
+      issues: ensureIssues(rawAnalysis.completionAndPenaltyRisks?.issues),
+    },
+    physicalAndEnvironmentalRisks: {
+      issues: ensureIssues(rawAnalysis.physicalAndEnvironmentalRisks?.issues),
+    },
+    specialConditionsAndAmenities: {
+      issues: ensureIssues(rawAnalysis.specialConditionsAndAmenities?.issues),
+    },
+    documents: rawAnalysis.documents || [],
+    propertyDetails: rawAnalysis.propertyDetails || {
+      propertyType: "Unknown",
+      bedrooms: 0,
+      bathrooms: 0,
+      size: "Unknown",
+      tenure: "Unknown",
+      guidePrice: "Unknown",
+      auctionDate: "Unknown",
+      auctionDateNote: "",
+    },
+    astaScore: rawAnalysis.astaScore || {
+      score: 0,
+      maxScore: 10,
+      description: "Unknown",
+    },
+  } : null;
 
   const handleSaveName = () => {
     if (editedName.trim()) {
