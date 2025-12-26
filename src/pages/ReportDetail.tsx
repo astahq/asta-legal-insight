@@ -211,6 +211,18 @@ const ReportDetail = () => {
     },
   });
 
+  const propertyAddress = isDemo
+    ? "22 Carslake Road"
+    : report?.property_address || "Property";
+
+  const propertySubtitle = isDemo ? "Wandsworth, London, SW15 3DP" : "";
+
+  const onWatchlist = isDemo ? demoWatchlist : report?.on_watchlist;
+
+  const analysis: ReportAnalysis | null = isDemo
+    ? demoReportAnalysis
+    : (report?.analysis_result as unknown as ReportAnalysis) || null;
+
   const handleSaveName = () => {
     if (editedName.trim()) {
       updateReportName.mutate(editedName.trim());
@@ -221,18 +233,6 @@ const ReportDetail = () => {
     setEditedName(propertyAddress);
     setIsEditingName(true);
   };
-
-  const analysis: ReportAnalysis | null = isDemo
-    ? demoReportAnalysis
-    : (report?.analysis_result as unknown as ReportAnalysis) || null;
-
-  const propertyAddress = isDemo
-    ? "22 Carslake Road"
-    : report?.property_address || "Property";
-
-  const propertySubtitle = isDemo ? "Wandsworth, London, SW15 3DP" : "";
-
-  const onWatchlist = isDemo ? demoWatchlist : report?.on_watchlist;
 
   if (isLoading && !isDemo) {
     return (
