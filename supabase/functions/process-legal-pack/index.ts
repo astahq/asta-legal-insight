@@ -1,6 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getDocument } from "https://esm.sh/pdfjs-serverless@0.3.2";
+import * as mammoth from "https://esm.sh/mammoth@1.6.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +20,52 @@ const SECTION_KEYS = [
   'Physical & Environmental Risks',
   'Special Conditions & Amenities',
 ];
+
+function getFileExtension(fileName: string | null | undefined) {
+  const ext = (fileName || '').split('.').pop()?.toLowerCase();
+  return ext || '';
+}
+
+async function extractPdfText(pdfData: Uint8Array): Promise<string> {
+  const doc = await getDocument(pdfData).promise;
+  let fullText = '';
+
+  for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
+    const page = await doc.getPage(pageNum);
+    const content = await page.getTextContent();
+    const pageText = (content.items as Array<{ str?: string }>).map((i) => i.str || '').join(' ');
+    fullText += pageText + "\n";
+  }
+
+  return fullText.trim();
+}
+
+async function extractTextFromBlob(opts: {
+  blob: Blob;
+  fileName: string;
+  mimeType?: string | null;
+}): Promise<string> {
+  const arrayBuffer = await opts.blob.arrayBuffer();
+  const ext = getFileExtension(opts.fileName);
+
+  if (opts.mimeType === 'text/plain' || ext === 'txt') {
+    return new TextDecoder().decode(arrayBuffer).trim();
+  }
+
+  if (opts.mimeType === 'application/pdf' || ext === 'pdf') {
+    return await extractPdfText(new Uint8Array(arrayBuffer));
+  }
+
+  if (
+    ext === 'docx' ||
+    opts.mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ) {
+    const res = await mammoth.extractRawText({ arrayBuffer });
+    return (res?.value || '').trim();
+  }
+
+  return '';
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -38,8 +86,13 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+  let reportId: string | undefined;
+  let userId: string | undefined;
+
   try {
-    const { reportId, userId } = await req.json();
+    const body = await req.json();
+    reportId = body?.reportId;
+    userId = body?.userId;
 
     if (!reportId || !userId) {
       return new Response(JSON.stringify({ error: 'reportId and userId are required' }), {
@@ -67,7 +120,7 @@ serve(async (req) => {
     }
 
     // 2. Get all uploaded documents for this report
-    const { data: documents, error: docsError } = await supabase
+    const { data: docsData, error: docsError } = await supabase
       .from('documents')
       .select('*')
       .eq('report_id', reportId);
@@ -77,7 +130,59 @@ serve(async (req) => {
       throw docsError;
     }
 
-    console.log(`Found ${documents?.length || 0} documents for report`);
+    const documents = docsData || [];
+    console.log(`Found ${documents.length} documents for report`);
+
+    // 2b. Extract text from storage for any docs that haven't been extracted yet
+    let extractedCount = 0;
+    for (const doc of documents) {
+      const needsExtraction = !doc.extracted_text || String(doc.extracted_text).trim().length === 0;
+      if (!needsExtraction) continue;
+
+      try {
+        console.log(`Extracting text for: ${doc.file_name} (${doc.file_path})`);
+
+        const { data: fileBlob, error: downloadError } = await supabase.storage
+          .from('legal-packs')
+          .download(doc.file_path);
+
+        if (downloadError || !fileBlob) {
+          console.error('Download error:', downloadError);
+          continue;
+        }
+
+        const extractedText = await extractTextFromBlob({
+          blob: fileBlob,
+          fileName: doc.file_name,
+          mimeType: doc.mime_type,
+        });
+
+        if (extractedText.trim()) {
+          const cappedText = extractedText.slice(0, 250_000);
+          doc.extracted_text = cappedText;
+          doc.extracted_at = new Date().toISOString();
+
+          const { error: updateDocError } = await supabase
+            .from('documents')
+            .update({ extracted_text: cappedText, extracted_at: doc.extracted_at })
+            .eq('id', doc.id);
+
+          if (updateDocError) {
+            console.error('Failed to update extracted text:', updateDocError);
+          } else {
+            extractedCount++;
+          }
+        } else {
+          console.log(`No extractable text found for: ${doc.file_name}`);
+        }
+      } catch (e) {
+        console.error(`Extraction failed for ${doc.file_name}:`, e);
+      }
+    }
+
+    if (extractedCount > 0) {
+      console.log(`Extracted text for ${extractedCount} document(s)`);
+    }
 
     // 3. Build combined text from all documents
     let combinedText = '';
@@ -306,9 +411,22 @@ Sections to analyze:
 
   } catch (error) {
     console.error('Error processing legal pack:', error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Processing failed' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+
+    try {
+      // best-effort: mark the report as failed so the UI can show a retry action
+      if (reportId) {
+        await supabase.from('reports').update({ status: 'failed' }).eq('id', reportId);
+      }
+    } catch (e) {
+      console.error('Failed to mark report as failed:', e);
+    }
+
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Processing failed' }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });

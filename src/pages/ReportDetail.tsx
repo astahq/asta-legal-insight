@@ -10,6 +10,7 @@ import { demoReportAnalysis, ReportAnalysis, ReportIssue } from "@/lib/demoRepor
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { DocumentChat } from "@/components/report/DocumentChat";
+import { useAuth } from "@/contexts/AuthContext";
 
 function IssueBadge({ issue }: { issue: ReportIssue }) {
   const bgColor = {
@@ -78,6 +79,7 @@ function ReportSection({
 const ReportDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const isDemo = id === "demo";
   const [demoWatchlist, setDemoWatchlist] = useState(false);
@@ -179,6 +181,36 @@ const ReportDetail = () => {
     },
   });
 
+  const retryAnalysis = useMutation({
+    mutationFn: async () => {
+      if (isDemo) return;
+      if (!report) throw new Error("Report not loaded");
+      if (!user) throw new Error("Please sign in to retry analysis");
+
+      const { error } = await supabase.functions.invoke("process-legal-pack", {
+        body: { reportId: report.id, userId: user.id },
+      });
+      if (error) throw error;
+
+      // best-effort: ensure UI shows "processing" immediately
+      await supabase.from("reports").update({ status: "processing" }).eq("id", report.id);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Analysis restarted",
+        description: "We’re re-processing your documents now.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["report", id] });
+    },
+    onError: (e) => {
+      toast({
+        title: "Failed to restart analysis",
+        description: e instanceof Error ? e.message : "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSaveName = () => {
     if (editedName.trim()) {
       updateReportName.mutate(editedName.trim());
@@ -190,9 +222,9 @@ const ReportDetail = () => {
     setIsEditingName(true);
   };
 
-  const analysis: ReportAnalysis = isDemo
+  const analysis: ReportAnalysis | null = isDemo
     ? demoReportAnalysis
-    : (report?.analysis_result as unknown as ReportAnalysis) || demoReportAnalysis;
+    : (report?.analysis_result as unknown as ReportAnalysis) || null;
 
   const propertyAddress = isDemo
     ? "22 Carslake Road"
@@ -304,16 +336,16 @@ const ReportDetail = () => {
           <div>
             <p className="text-sm text-muted-foreground">Guide Price</p>
             <p className="text-3xl font-bold text-foreground">
-              {analysis.propertyDetails.guidePrice}
+              {analysis?.propertyDetails?.guidePrice || "—"}
             </p>
           </div>
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Auction Date</p>
             <p className="font-semibold text-foreground">
-              {analysis.propertyDetails.auctionDate}
+              {analysis?.propertyDetails?.auctionDate || "—"}
             </p>
             <p className="text-xs text-muted-foreground">
-              {analysis.propertyDetails.auctionDateNote}
+              {(analysis as any)?.propertyDetails?.auctionDateNote || ""}
             </p>
           </div>
         </div>
@@ -324,7 +356,7 @@ const ReportDetail = () => {
               Property Type
             </p>
             <p className="font-medium text-foreground">
-              {analysis.propertyDetails.propertyType}
+              {analysis?.propertyDetails?.propertyType || "—"}
             </p>
           </div>
           <div>
@@ -332,7 +364,7 @@ const ReportDetail = () => {
               Bedrooms
             </p>
             <p className="font-medium text-foreground">
-              {analysis.propertyDetails.bedrooms}
+              {analysis?.propertyDetails?.bedrooms || "—"}
             </p>
           </div>
           <div>
@@ -340,13 +372,13 @@ const ReportDetail = () => {
               Bathrooms
             </p>
             <p className="font-medium text-foreground">
-              {analysis.propertyDetails.bathrooms}
+              {analysis?.propertyDetails?.bathrooms || "—"}
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Size</p>
             <p className="font-medium text-foreground">
-              {analysis.propertyDetails.size}
+              {analysis?.propertyDetails?.size || "—"}
             </p>
           </div>
           <div>
@@ -354,7 +386,7 @@ const ReportDetail = () => {
               Tenure
             </p>
             <p className="font-medium text-foreground">
-              {analysis.propertyDetails.tenure}
+              {analysis?.propertyDetails?.tenure || "—"}
             </p>
           </div>
         </div>
@@ -366,10 +398,12 @@ const ReportDetail = () => {
             </span>
             <div className="flex items-center gap-3">
               <span className="text-primary font-bold text-xl">
-                {analysis.astaScore.score}/{analysis.astaScore.maxScore}
+                {analysis?.astaScore
+                  ? `${analysis.astaScore.score}/${analysis.astaScore.maxScore}`
+                  : "—"}
               </span>
               <span className="text-sm text-success font-medium">
-                {analysis.astaScore.description}
+                {analysis?.astaScore?.description || ""}
               </span>
             </div>
           </div>
@@ -380,178 +414,242 @@ const ReportDetail = () => {
           <span>Not legal advice - your smarter due-diligence co-pilot</span>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6">
-          <ReportSection title="Title" issueCount={analysis.title.issues.length}>
-            <div className="space-y-2">
-              {analysis.title.issues.map((issue, i) => (
-                <IssueBadge key={i} issue={issue} />
-              ))}
+        {!isDemo && (!analysis || report?.status !== "completed") ? (
+          <div className="bg-card border border-border rounded-lg p-6">
+            <div className="flex items-start gap-3">
+              {report?.status === "failed" ? (
+                <>
+                  <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
+                  <div className="flex-1">
+                    <h2 className="text-base font-semibold text-foreground">Analysis failed</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      We couldn’t process this legal pack yet. You can retry the analysis.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        onClick={() => retryAnalysis.mutate()}
+                        disabled={retryAnalysis.isPending || !user}
+                      >
+                        {retryAnalysis.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Retrying...
+                          </>
+                        ) : (
+                          "Retry analysis"
+                        )}
+                      </Button>
+                      {!user && (
+                        <span className="text-sm text-muted-foreground self-center">
+                          Sign in to retry.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Loader2 className="w-5 h-5 text-primary mt-0.5 animate-spin" />
+                  <div className="flex-1">
+                    <h2 className="text-base font-semibold text-foreground">Analysis in progress</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      We’re extracting text and running the AI. This can take a few minutes.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => queryClient.invalidateQueries({ queryKey: ["report", id] })}
+                      >
+                        Refresh
+                      </Button>
+                      <Button
+                        onClick={() => retryAnalysis.mutate()}
+                        disabled={retryAnalysis.isPending || !user}
+                      >
+                        Restart
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-            {analysis.title.description && (
-              <p className="text-sm text-muted-foreground mt-3 bg-muted/50 p-3 rounded-md">
-                {analysis.title.description}
-              </p>
-            )}
-          </ReportSection>
-
-          <ReportSection title="Ownership" issueCount={analysis.ownership.issues.length}>
-            <div className="space-y-2">
-              {analysis.ownership.issues.map((issue, i) => (
-                <IssueBadge key={i} issue={issue} />
-              ))}
-            </div>
-          </ReportSection>
-
-          <ReportSection
-            title="Charges & Money"
-            issueCount={analysis.chargesAndMoney.issues.length}
-            rightContent={
-              <span className="text-sm text-muted-foreground">
-                {analysis.chargesAndMoney.charges.length} Charges Found
-              </span>
-            }
-          >
-            <div className="overflow-x-auto mb-4 -mx-2">
-              <table className="w-full text-sm min-w-[500px]">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">
-                      Type
-                    </th>
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">
-                      Name
-                    </th>
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">
-                      Amount
-                    </th>
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">
-                      Date
-                    </th>
-                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">
-                      Paid Off
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {analysis.chargesAndMoney.charges.map((charge, i) => (
-                    <tr key={i} className="border-b border-border last:border-0">
-                      <td className="py-2 px-2 text-foreground">{charge.type}</td>
-                      <td className="py-2 px-2 text-foreground">{charge.name}</td>
-                      <td className="py-2 px-2 text-foreground">{charge.amount}</td>
-                      <td className="py-2 px-2 text-foreground">{charge.date}</td>
-                      <td className="py-2 px-2 text-foreground">{charge.paidOff}</td>
-                    </tr>
+          </div>
+        ) : (
+          <>
+            <div className="bg-card border border-border rounded-lg p-6">
+              <ReportSection title="Title" issueCount={analysis.title.issues.length}>
+                <div className="space-y-2">
+                  {analysis.title.issues.map((issue, i) => (
+                    <IssueBadge key={i} issue={issue} />
                   ))}
-                </tbody>
-              </table>
+                </div>
+                {analysis.title.description && (
+                  <p className="text-sm text-muted-foreground mt-3 bg-muted/50 p-3 rounded-md">
+                    {analysis.title.description}
+                  </p>
+                )}
+              </ReportSection>
+
+              <ReportSection title="Ownership" issueCount={analysis.ownership.issues.length}>
+                <div className="space-y-2">
+                  {analysis.ownership.issues.map((issue, i) => (
+                    <IssueBadge key={i} issue={issue} />
+                  ))}
+                </div>
+              </ReportSection>
+
+              <ReportSection
+                title="Charges & Money"
+                issueCount={analysis.chargesAndMoney.issues.length}
+                rightContent={
+                  <span className="text-sm text-muted-foreground">
+                    {analysis.chargesAndMoney.charges.length} Charges Found
+                  </span>
+                }
+              >
+                <div className="overflow-x-auto mb-4 -mx-2">
+                  <table className="w-full text-sm min-w-[500px]">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">
+                          Type
+                        </th>
+                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">
+                          Name
+                        </th>
+                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">
+                          Amount
+                        </th>
+                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">
+                          Date
+                        </th>
+                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">
+                          Paid Off
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analysis.chargesAndMoney.charges.map((charge, i) => (
+                        <tr key={i} className="border-b border-border last:border-0">
+                          <td className="py-2 px-2 text-foreground">{charge.type}</td>
+                          <td className="py-2 px-2 text-foreground">{charge.name}</td>
+                          <td className="py-2 px-2 text-foreground">{charge.amount}</td>
+                          <td className="py-2 px-2 text-foreground">{charge.date}</td>
+                          <td className="py-2 px-2 text-foreground">{charge.paidOff}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="space-y-2">
+                  {analysis.chargesAndMoney.issues.map((issue, i) => (
+                    <IssueBadge key={i} issue={issue} />
+                  ))}
+                </div>
+              </ReportSection>
+
+              <ReportSection
+                title="Covenants"
+                dotColor="green"
+                rightContent={
+                  <span className="text-foreground">{analysis.covenants || "Unknown"}</span>
+                }
+              >
+                <div />
+              </ReportSection>
+
+              <ReportSection
+                title="Tenure"
+                dotColor="green"
+                rightContent={
+                  <span className="text-foreground">{analysis.tenure || "Unknown"}</span>
+                }
+              >
+                <div />
+              </ReportSection>
+
+              <ReportSection
+                title="Planning And Development"
+                issueCount={analysis.planningAndDevelopment.issues.length}
+              >
+                <div className="space-y-2">
+                  {analysis.planningAndDevelopment.issues.map((issue, i) => (
+                    <IssueBadge key={i} issue={issue} />
+                  ))}
+                </div>
+              </ReportSection>
+
+              <ReportSection
+                title="Completion & Penalty Risks"
+                issueCount={analysis.completionAndPenaltyRisks.issues.length}
+              >
+                <div className="space-y-2">
+                  {analysis.completionAndPenaltyRisks.issues.map((issue, i) => (
+                    <IssueBadge key={i} issue={issue} />
+                  ))}
+                </div>
+              </ReportSection>
+
+              <ReportSection
+                title="Physical & Environmental Risks"
+                issueCount={analysis.physicalAndEnvironmentalRisks.issues.length}
+              >
+                <div className="space-y-2">
+                  {analysis.physicalAndEnvironmentalRisks.issues.map((issue, i) => (
+                    <IssueBadge key={i} issue={issue} />
+                  ))}
+                </div>
+              </ReportSection>
+
+              <ReportSection
+                title="Special Conditions & Amendments"
+                issueCount={analysis.specialConditionsAndAmenities.issues.length}
+              >
+                <div className="space-y-2">
+                  {analysis.specialConditionsAndAmenities.issues.map((issue, i) => (
+                    <IssueBadge key={i} issue={issue} />
+                  ))}
+                </div>
+              </ReportSection>
             </div>
-            <div className="space-y-2">
-              {analysis.chargesAndMoney.issues.map((issue, i) => (
-                <IssueBadge key={i} issue={issue} />
-              ))}
+
+            <div className="bg-card border border-border rounded-lg p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">Documents</h2>
+              </div>
+              <div className="overflow-x-auto -mx-2">
+                <table className="w-full text-sm min-w-[600px]">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+                        Property Address
+                      </th>
+                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+                        Pages
+                      </th>
+                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+                        Key Findings Detected
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analysis.documents.map((doc, i) => (
+                      <tr
+                        key={i}
+                        className="border-b border-border last:border-0 hover:bg-muted/30"
+                      >
+                        <td className="py-3 px-2 text-foreground">{doc.name}</td>
+                        <td className="py-3 px-2 text-foreground">{doc.pages}</td>
+                        <td className="py-3 px-2 text-muted-foreground">{doc.keyFindings}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </ReportSection>
-
-          <ReportSection
-            title="Covenants"
-            dotColor="green"
-            rightContent={
-              <span className="text-foreground">{analysis.covenants || "Unknown"}</span>
-            }
-          >
-            <div />
-          </ReportSection>
-
-          <ReportSection
-            title="Tenure"
-            dotColor="green"
-            rightContent={
-              <span className="text-foreground">{analysis.tenure || "Unknown"}</span>
-            }
-          >
-            <div />
-          </ReportSection>
-
-          <ReportSection
-            title="Planning And Development"
-            issueCount={analysis.planningAndDevelopment.issues.length}
-          >
-            <div className="space-y-2">
-              {analysis.planningAndDevelopment.issues.map((issue, i) => (
-                <IssueBadge key={i} issue={issue} />
-              ))}
-            </div>
-          </ReportSection>
-
-          <ReportSection
-            title="Completion & Penalty Risks"
-            issueCount={analysis.completionAndPenaltyRisks.issues.length}
-          >
-            <div className="space-y-2">
-              {analysis.completionAndPenaltyRisks.issues.map((issue, i) => (
-                <IssueBadge key={i} issue={issue} />
-              ))}
-            </div>
-          </ReportSection>
-
-          <ReportSection
-            title="Physical & Environmental Risks"
-            issueCount={analysis.physicalAndEnvironmentalRisks.issues.length}
-          >
-            <div className="space-y-2">
-              {analysis.physicalAndEnvironmentalRisks.issues.map((issue, i) => (
-                <IssueBadge key={i} issue={issue} />
-              ))}
-            </div>
-          </ReportSection>
-
-          <ReportSection
-            title="Special Conditions & Amendments"
-            issueCount={analysis.specialConditionsAndAmenities.issues.length}
-          >
-            <div className="space-y-2">
-              {analysis.specialConditionsAndAmenities.issues.map((issue, i) => (
-                <IssueBadge key={i} issue={issue} />
-              ))}
-            </div>
-          </ReportSection>
-        </div>
-
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <FileText className="w-5 h-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold text-foreground">Documents</h2>
-          </div>
-          <div className="overflow-x-auto -mx-2">
-            <table className="w-full text-sm min-w-[600px]">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-2 font-medium text-muted-foreground">
-                    Property Address
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-muted-foreground">
-                    Pages
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-muted-foreground">
-                    Key Findings Detected
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {analysis.documents.map((doc, i) => (
-                  <tr
-                    key={i}
-                    className="border-b border-border last:border-0 hover:bg-muted/30"
-                  >
-                    <td className="py-3 px-2 text-foreground">{doc.name}</td>
-                    <td className="py-3 px-2 text-foreground">{doc.pages}</td>
-                    <td className="py-3 px-2 text-muted-foreground">{doc.keyFindings}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );
