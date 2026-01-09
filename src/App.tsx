@@ -16,6 +16,7 @@ import Billing from "./pages/Billing";
 import Settings from "./pages/Settings";
 import CompareProperties from "./pages/CompareProperties";
 import Support from "./pages/Support";
+import TestPlayground from "./pages/TestPlayground";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/compare" element={<ProtectedRoute><CompareProperties /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+              <Route path="/test-playground" element={<ProtectedRoute><TestPlayground /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </ProfileProvider>

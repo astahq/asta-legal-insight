@@ -1,5 +1,13 @@
 import { useState, useCallback } from "react";
-import { Upload, Info, ChevronRight, Pencil, Loader2, ExternalLink, Star } from "lucide-react";
+import {
+  Upload,
+  Info,
+  ChevronRight,
+  Pencil,
+  Loader2,
+  ExternalLink,
+  Star,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,27 +56,27 @@ export function UploadSection() {
     e.preventDefault();
     setIsDragging(false);
     const files = Array.from(e.dataTransfer.files);
-    setUploadedFiles(prev => [...prev, ...files]);
+    setUploadedFiles((prev) => [...prev, ...files]);
   }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setUploadedFiles(prev => [...prev, ...files]);
+    setUploadedFiles((prev) => [...prev, ...files]);
   };
 
   const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const scrapePropertyUrl = async () => {
     if (!propertyUrl.trim()) return;
-    
+
     setIsLoading(true);
     setScrapedData(null);
 
     try {
       const response = await firecrawlApi.scrape(propertyUrl, {
-        formats: ['markdown'],
+        formats: ["markdown"],
         onlyMainContent: true,
       });
 
@@ -90,10 +98,11 @@ export function UploadSection() {
         });
       }
     } catch (error) {
-      console.error('Error scraping:', error);
+      console.error("Error scraping:", error);
       toast({
         title: "Error",
-        description: "Failed to scrape property URL. Please check the URL and try again.",
+        description:
+          "Failed to scrape property URL. Please check the URL and try again.",
         variant: "destructive",
       });
     } finally {
@@ -124,80 +133,89 @@ export function UploadSection() {
 
     try {
       // Extract property address from metadata or use a placeholder
-      const propertyAddress = scrapedData?.metadata?.title || 
-        scrapedData?.metadata?.description?.slice(0, 100) || 
-        uploadedFiles[0]?.name.replace(/\.[^/.]+$/, "") || 
+      const propertyAddress =
+        scrapedData?.metadata?.title ||
+        scrapedData?.metadata?.description?.slice(0, 100) ||
+        uploadedFiles[0]?.name.replace(/\.[^/.]+$/, "") ||
         "Property Analysis";
 
       // 1. Create a report in the database
       const { data: reportData, error: reportError } = await supabase
-        .from('reports')
-        .insert([{
-          property_address: propertyAddress,
-          property_url: propertyUrl || null,
-          status: 'processing',
-          scraped_data: scrapedData as any || null,
-          on_watchlist: addToWatchlist,
-          user_id: user.id,
-          documents_count: uploadedFiles.length,
-        }])
-        .select('id')
+        .from("reports")
+        .insert([
+          {
+            property_address: propertyAddress,
+            property_url: propertyUrl || null,
+            status: "processing",
+            scraped_data: (scrapedData as any) || null,
+            on_watchlist: addToWatchlist,
+            user_id: user.id,
+            documents_count: uploadedFiles.length,
+          },
+        ])
+        .select("id")
         .single();
 
       if (reportError) throw reportError;
-      
+
       const reportId = reportData.id;
-      console.log('Created report:', reportId);
+      console.log("Created report:", reportId);
 
       // 2. Upload files to Supabase Storage and create document records
       for (const file of uploadedFiles) {
         const filePath = `${user.id}/${reportId}/${file.name}`;
-        
+
         // Upload to storage
         const { error: uploadError } = await supabase.storage
-          .from('legal-packs')
+          .from("legal-packs")
           .upload(filePath, file, {
-            cacheControl: '3600',
+            cacheControl: "3600",
             upsert: false,
           });
 
         if (uploadError) {
-          console.error('Upload error:', uploadError);
+          console.error("Upload error:", uploadError);
           // Continue with other files even if one fails
           continue;
         }
 
         // Create document record (text extraction will happen in edge function)
-        await supabase.from('documents').insert({
+        await supabase.from("documents").insert({
           report_id: reportId,
           user_id: user.id,
           file_path: filePath,
           file_name: file.name,
           mime_type: file.type,
           size_bytes: file.size,
-          extracted_text: '', // Will be populated by edge function
+          extracted_text: "", // Will be populated by edge function
         });
       }
 
       // 3. Trigger the processing edge function
-      const { error: processError } = await supabase.functions.invoke('process-legal-pack', {
-        body: { reportId, userId: user.id },
-      });
+      const { error: processError } = await supabase.functions.invoke(
+        "process-legal-pack",
+        {
+          body: { reportId, userId: user.id },
+        }
+      );
 
       if (processError) {
-        console.error('Process error:', processError);
+        console.error("Process error:", processError);
         // Don't throw - report is created, processing may still work
       }
 
       toast({
-        title: addToWatchlist ? "Report created and added to watchlist" : "Report created",
-        description: "Your analysis is now processing. You'll see results shortly.",
+        title: addToWatchlist
+          ? "Report created and added to watchlist"
+          : "Report created",
+        description:
+          "Your analysis is now processing. You'll see results shortly.",
       });
 
       // Navigate to the report detail page
       navigate(`/reports/${reportId}`);
     } catch (error) {
-      console.error('Error creating report:', error);
+      console.error("Error creating report:", error);
       toast({
         title: "Error",
         description: "Failed to create report. Please try again.",
@@ -206,7 +224,7 @@ export function UploadSection() {
     } finally {
       setIsAnalyzing(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -215,7 +233,11 @@ export function UploadSection() {
           Upload Your Legal Pack
         </h3>
         <p className="text-sm text-muted-foreground mb-4 max-w-full">
-          Our AI has been trained on thousands of legal packs and property auction documents. It can identify issues that even experienced lawyers might miss, and it does it in minutes instead of hours. The reports are comprehensive, easy to understand, and highlight all potential risks.
+          Our AI has been trained on thousands of legal packs and property
+          auction documents. It can identify issues that even experienced
+          lawyers might miss, and it does it in minutes instead of hours. The
+          reports are comprehensive, easy to understand, and highlight all
+          potential risks.
         </p>
 
         {/* Disclaimer */}
@@ -261,10 +283,17 @@ export function UploadSection() {
         {/* Uploaded Files List */}
         {uploadedFiles.length > 0 && (
           <div className="mt-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Uploaded files:</p>
+            <p className="text-sm font-medium text-foreground">
+              Uploaded files:
+            </p>
             {uploadedFiles.map((file, index) => (
-              <div key={index} className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2">
-                <span className="text-sm text-foreground truncate">{file.name}</span>
+              <div
+                key={index}
+                className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2"
+              >
+                <span className="text-sm text-foreground truncate">
+                  {file.name}
+                </span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -286,9 +315,12 @@ export function UploadSection() {
       <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-8">
           <div className="flex-shrink-0">
-            <h4 className="font-medium text-foreground">Property URL (recommended)</h4>
+            <h4 className="font-medium text-foreground">
+              Property URL (recommended)
+            </h4>
             <p className="text-sm text-muted-foreground mt-1">
-              Adding a property URL allows us to<br className="hidden md:block" />
+              Adding a property URL allows us to
+              <br className="hidden md:block" />
               extract additional property information.
             </p>
           </div>
@@ -306,7 +338,7 @@ export function UploadSection() {
                   }
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     setIsEditingUrl(false);
                     if (propertyUrl.trim()) {
                       scrapePropertyUrl();
@@ -318,15 +350,18 @@ export function UploadSection() {
                 disabled={isLoading}
               />
             ) : (
-              <div 
+              <div
                 className="flex-1 flex items-center justify-between bg-background border border-border rounded-md px-3 py-2 cursor-text"
                 onClick={() => setIsEditingUrl(true)}
               >
-                <span className={cn(
-                  "text-sm truncate",
-                  propertyUrl ? "text-foreground" : "text-muted-foreground"
-                )}>
-                  {propertyUrl || "https://online.auctionhouse.co.uk/lot/details/..."}
+                <span
+                  className={cn(
+                    "text-sm truncate",
+                    propertyUrl ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  {propertyUrl ||
+                    "https://online.auctionhouse.co.uk/lot/details/..."}
                 </span>
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 text-primary animate-spin" />
@@ -343,7 +378,9 @@ export function UploadSection() {
       {scrapedData && (
         <Card className="p-4 bg-card border-border">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium text-foreground">Extracted Property Information</h4>
+            <h4 className="font-medium text-foreground">
+              Extracted Property Information
+            </h4>
             {scrapedData.metadata?.sourceURL && (
               <a
                 href={scrapedData.metadata.sourceURL}
@@ -355,24 +392,24 @@ export function UploadSection() {
               </a>
             )}
           </div>
-          
+
           {scrapedData.metadata?.title && (
             <p className="text-sm font-medium text-foreground mb-2">
               {scrapedData.metadata.title}
             </p>
           )}
-          
+
           {scrapedData.metadata?.description && (
             <p className="text-sm text-muted-foreground mb-3">
               {scrapedData.metadata.description}
             </p>
           )}
-          
+
           {scrapedData.markdown && (
             <div className="bg-muted/30 rounded-md p-3 max-h-60 overflow-y-auto">
               <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-sans">
                 {scrapedData.markdown.slice(0, 2000)}
-                {scrapedData.markdown.length > 2000 && '...'}
+                {scrapedData.markdown.length > 2000 && "..."}
               </pre>
             </div>
           )}
@@ -381,8 +418,8 @@ export function UploadSection() {
 
       {/* Add to Watchlist Option */}
       <div className="flex items-center space-x-2">
-        <Checkbox 
-          id="watchlist" 
+        <Checkbox
+          id="watchlist"
           checked={addToWatchlist}
           onCheckedChange={(checked) => setAddToWatchlist(checked === true)}
         />
@@ -396,10 +433,14 @@ export function UploadSection() {
       </div>
 
       {/* Analyze Button */}
-      <Button 
+      <Button
         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-base font-medium"
         onClick={handleAnalyze}
-        disabled={isLoading || isAnalyzing || (uploadedFiles.length === 0 && !scrapedData)}
+        disabled={
+          isLoading ||
+          isAnalyzing ||
+          (uploadedFiles.length === 0 && !scrapedData)
+        }
       >
         {isAnalyzing ? (
           <>

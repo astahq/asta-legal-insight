@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { DocumentChat } from "@/components/report/DocumentChat";
 import { useAuth } from "@/contexts/AuthContext";
+import { MarkdownRenderer } from "@/components/test/MarkdownRenderer";
 
 function IssueBadge({ issue }: { issue: ReportIssue }) {
   const bgColor = {
@@ -226,8 +227,17 @@ const ReportDetail = () => {
     ? demoReportAnalysis
     : (report?.analysis_result as unknown as ReportAnalysis) || null;
   
+  // Check if analysis_result is markdown format (string) or structured format (object)
+  const isMarkdownFormat = !isDemo && report?.analysis_result && 
+    typeof report.analysis_result === 'string' && 
+    report.analysis_result.trim().startsWith('#');
+  
+  const markdownContent = isMarkdownFormat 
+    ? (report?.analysis_result as string) 
+    : null;
+  
   // Create a safe analysis object with default empty arrays for issues
-  const analysis: ReportAnalysis | null = rawAnalysis ? {
+  const analysis: ReportAnalysis | null = rawAnalysis && !isMarkdownFormat ? {
     ...rawAnalysis,
     title: {
       issues: ensureIssues(rawAnalysis.title?.issues),
@@ -394,7 +404,7 @@ const ReportDetail = () => {
               {analysis?.propertyDetails?.auctionDate || "—"}
             </p>
             <p className="text-xs text-muted-foreground">
-              {(analysis as any)?.propertyDetails?.auctionDateNote || ""}
+              {analysis?.propertyDetails?.auctionDateNote || ""}
             </p>
           </div>
         </div>
@@ -525,6 +535,11 @@ const ReportDetail = () => {
           </div>
         ) : (
           <>
+            {isMarkdownFormat && markdownContent ? (
+              <div className="bg-card border border-border rounded-lg p-6">
+                <MarkdownRenderer content={markdownContent} />
+              </div>
+            ) : analysis ? (
             <div className="bg-card border border-border rounded-lg p-6">
               <ReportSection title="Title" issueCount={analysis.title.issues.length}>
                 <div className="space-y-2">
@@ -661,7 +676,9 @@ const ReportDetail = () => {
                 </div>
               </ReportSection>
             </div>
+            ) : null}
 
+            {analysis && (
             <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center gap-2 mb-4">
                 <FileText className="w-5 h-5 text-muted-foreground" />
@@ -697,6 +714,7 @@ const ReportDetail = () => {
                 </table>
               </div>
             </div>
+            )}
           </>
         )}
       </div>

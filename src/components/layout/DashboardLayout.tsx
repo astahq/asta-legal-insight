@@ -10,7 +10,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user } = useAuth();
   const { profile } = useProfile();
-  const userName = profile.full_name || user?.email?.split('@')[0] || 'User';
+  const userName = profile.full_name || user?.email?.split("@")[0] || "User";
   const avatarUrl = profile.avatar_url;
 
   return (
@@ -18,9 +18,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header userName={userName} avatarUrl={avatarUrl} />
-        <main className="flex-1 overflow-auto p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
     </div>
   );

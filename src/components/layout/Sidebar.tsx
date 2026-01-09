@@ -7,7 +7,8 @@ import {
   Settings, 
   HelpCircle,
   Plus,
-  LogOut
+  LogOut,
+  TestTube
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ const mainNavItems: NavItem[] = [
   { icon: FileText, label: "Reports", href: "/reports" },
   { icon: Star, label: "Watchlist", href: "/watchlist" },
   { icon: GitCompare, label: "Compare Properties", href: "/compare", badge: "NEW", badgeColor: "bg-primary text-primary-foreground" },
+  { icon: TestTube, label: "Test Playground", href: "/test-playground" },
   { icon: Bell, label: "Auction Alerts", href: "/alerts", badge: "coming soon", badgeColor: "bg-destructive/10 text-destructive", disabled: true },
 ];
 
