@@ -1,45 +1,64 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, Lock, User, Home } from 'lucide-react';
-import { z } from 'zod';
+import { useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2, Mail, Lock, User, Home } from "lucide-react";
+import { z } from "zod";
 
-const emailSchema = z.string().email('Please enter a valid email address');
-const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
+const emailSchema = z.string().email("Please enter a valid email address");
+const passwordSchema = z
+  .string()
+  .min(6, "Password must be at least 6 characters");
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading } = useAuth();
+
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupName, setSignupName] = useState("");
 
-  // Login state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-  // Signup state
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupName, setSignupName] = useState('');
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       emailSchema.parse(loginEmail);
       passwordSchema.parse(loginPassword);
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
-          title: 'Validation Error',
+          title: "Validation Error",
           description: error.errors[0].message,
-          variant: 'destructive',
+          variant: "destructive",
         });
         return;
       }
@@ -54,29 +73,29 @@ const Auth = () => {
       });
 
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
+        if (error.message.includes("Invalid login credentials")) {
           toast({
-            title: 'Login Failed',
-            description: 'Invalid email or password. Please try again.',
-            variant: 'destructive',
+            title: "Login Failed",
+            description: "Invalid email or password. Please try again.",
+            variant: "destructive",
           });
         } else {
           toast({
-            title: 'Login Failed',
+            title: "Login Failed",
             description: error.message,
-            variant: 'destructive',
+            variant: "destructive",
           });
         }
         return;
       }
 
-      toast({ title: 'Welcome back!' });
-      navigate('/');
+      toast({ title: "Welcome back!" });
+      navigate("/");
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -92,9 +111,9 @@ const Auth = () => {
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
-          title: 'Validation Error',
+          title: "Validation Error",
           description: error.errors[0].message,
-          variant: 'destructive',
+          variant: "destructive",
         });
         return;
       }
@@ -117,31 +136,32 @@ const Auth = () => {
       });
 
       if (error) {
-        if (error.message.includes('already registered')) {
+        if (error.message.includes("already registered")) {
           toast({
-            title: 'Account Exists',
-            description: 'An account with this email already exists. Please login instead.',
-            variant: 'destructive',
+            title: "Account Exists",
+            description:
+              "An account with this email already exists. Please login instead.",
+            variant: "destructive",
           });
         } else {
           toast({
-            title: 'Signup Failed',
+            title: "Signup Failed",
             description: error.message,
-            variant: 'destructive',
+            variant: "destructive",
           });
         }
         return;
       }
 
       toast({
-        title: 'Account Created',
-        description: 'Please check your email to confirm your account.',
+        title: "Account Created",
+        description: "Please check your email to confirm your account.",
       });
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -153,7 +173,7 @@ const Auth = () => {
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo: `${window.location.origin}/`,
         },
@@ -161,16 +181,16 @@ const Auth = () => {
 
       if (error) {
         toast({
-          title: 'Google Login Failed',
+          title: "Google Login Failed",
           description: error.message,
-          variant: 'destructive',
+          variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to connect to Google. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to connect to Google. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsGoogleLoading(false);
@@ -233,7 +253,9 @@ const Auth = () => {
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
+                <span className="bg-card px-2 text-muted-foreground">
+                  Or continue with email
+                </span>
               </div>
             </div>
 
@@ -282,7 +304,7 @@ const Auth = () => {
                         Signing in...
                       </>
                     ) : (
-                      'Sign In'
+                      "Sign In"
                     )}
                   </Button>
                 </form>
@@ -341,7 +363,7 @@ const Auth = () => {
                         Creating account...
                       </>
                     ) : (
-                      'Create Account'
+                      "Create Account"
                     )}
                   </Button>
                 </form>
