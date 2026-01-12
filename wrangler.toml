@@ -2,3 +2,7 @@ name = "asta-legal-insight"
 compatibility_date = "2026-01-07"
 main = "worker.ts"
 
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
+
