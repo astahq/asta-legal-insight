@@ -14,7 +14,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Mail, Lock, User, Home } from "lucide-react";
+import { Loader2, Mail, Lock, User } from "lucide-react";
+import astaLogo from "@/assets/asta-logo.png";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Please enter a valid email address");
@@ -202,8 +203,8 @@ const Auth = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <Home className="w-5 h-5 text-primary-foreground" />
+          <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
+            <img src={astaLogo} alt="Asta" className="w-8 h-8 object-contain" />
           </div>
           <span className="text-2xl font-bold text-foreground">Asta</span>
         </div>
