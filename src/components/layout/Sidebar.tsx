@@ -54,7 +54,7 @@ export function Sidebar() {
           <div className="w-8 h-8 flex items-center justify-center">
             <img src={astaLogo} alt="Asta" className="w-8 h-8 object-contain" />
           </div>
-          <span className="font-semibold text-sidebar-foreground">Property Bidding Assistant</span>
+          <span className="font-semibold text-sidebar-foreground">Asta</span>
         </Link>
       </div>
 

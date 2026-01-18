@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { FileText, CheckCircle2, Clock, AlertCircle, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { cn, getDisplayAddress } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,11 @@ export function LastReports() {
             <tbody>
               {reports.map((report) => (
                 <tr key={report.id} className="border-b border-border last:border-0">
-                  <td className="py-4 text-sm text-foreground">{report.property_address}</td>
+                  <td className="py-4 text-sm text-foreground">
+                    <span className="truncate block" title={report.property_address}>
+                      {getDisplayAddress(report.property_address, 80)}
+                    </span>
+                  </td>
                   <td className="py-4 text-sm text-muted-foreground">
                     {format(new Date(report.created_at), 'dd/MM/yyyy')}
                   </td>

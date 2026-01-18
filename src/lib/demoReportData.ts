@@ -1,20 +1,46 @@
 export interface ReportIssue {
   severity: 'critical' | 'warning' | 'info';
   text: string;
+  recommendation?: string;
 }
 
 export interface Charge {
   type: string;
-  name: string;
-  amount: string;
-  date: string;
-  paidOff: string;
+  name?: string;
+  amount?: string;
+  date?: string;
+  paidOff?: string;
+  description?: string;
 }
 
 export interface Document {
   name: string;
   pages: number;
   keyFindings: string;
+}
+
+export interface PropertyDetails {
+  propertyType?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  size?: string;
+  guidePrice?: string;
+  auctionDate?: string;
+  auctionDateNote?: string;
+  address?: string;
+  catalogNumber?: string;
+  description?: string;
+  lotType?: string;
+  epcRating?: string;
+  councilTax?: string;
+  buyersCharge?: string;
+  administrationChargeBand?: string;
+}
+
+export interface ASTAScore {
+  score: number;
+  maxScore: number;
+  description: string;
 }
 
 export interface ReportAnalysis {
@@ -44,21 +70,8 @@ export interface ReportAnalysis {
     issues: ReportIssue[];
   };
   documents: Document[];
-  propertyDetails: {
-    propertyType: string;
-    bedrooms: number;
-    bathrooms: number;
-    size: string;
-    tenure: string;
-    guidePrice: string;
-    auctionDate: string;
-    auctionDateNote: string;
-  };
-  astaScore: {
-    score: number;
-    maxScore: number;
-    description: string;
-  };
+  propertyDetails: PropertyDetails;
+  astaScore?: ASTAScore;
 }
 
 export const demoReportAnalysis: ReportAnalysis = {
@@ -130,7 +143,6 @@ export const demoReportAnalysis: ReportAnalysis = {
     bedrooms: 4,
     bathrooms: 2,
     size: '1,332 sq ft',
-    tenure: 'Freehold',
     guidePrice: '£630,000',
     auctionDate: '23 October 2025',
     auctionDateNote: '(in two days)',

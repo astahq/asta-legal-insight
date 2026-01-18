@@ -4,7 +4,7 @@ import { Star, CheckCircle2, Clock, AlertCircle, Loader2, Trash2 } from "lucide-
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, getDisplayAddress } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -121,7 +121,11 @@ const Watchlist = () => {
                 <tbody>
                   {reports.map((report) => (
                     <tr key={report.id} className="border-b border-border last:border-0 hover:bg-muted/50">
-                      <td className="p-4 text-sm text-foreground">{report.property_address}</td>
+                      <td className="p-4 text-sm text-foreground">
+                        <span className="truncate block" title={report.property_address}>
+                          {getDisplayAddress(report.property_address, 80)}
+                        </span>
+                      </td>
                       <td className="p-4 text-sm text-muted-foreground">
                         {format(new Date(report.created_at), 'dd/MM/yyyy')}
                       </td>

@@ -1,11 +1,10 @@
-import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FileText, CheckCircle2, Clock, Star, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, Clock, Star, AlertCircle, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, getDisplayAddress } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -110,9 +109,13 @@ const Reports = () => {
                 <tbody>
                   {/* Demo Report Row */}
                   <tr className="border-b border-border hover:bg-muted/50 bg-primary/5">
-                    <td className="p-4 text-sm text-foreground flex items-center gap-2">
-                      {demoReport.property_address}
-                      <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">Demo</Badge>
+                    <td className="p-4 text-sm text-foreground">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="truncate" title={demoReport.property_address}>
+                          {getDisplayAddress(demoReport.property_address, 80)}
+                        </span>
+                        <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20 flex-shrink-0">Demo</Badge>
+                      </div>
                     </td>
                     <td className="p-4 text-sm text-muted-foreground">
                       {format(new Date(demoReport.created_at), 'dd/MM/yyyy')}
@@ -132,7 +135,11 @@ const Reports = () => {
                   {/* User Reports */}
                   {reports?.map((report) => (
                     <tr key={report.id} className="border-b border-border last:border-0 hover:bg-muted/50">
-                      <td className="p-4 text-sm text-foreground">{report.property_address}</td>
+                      <td className="p-4 text-sm text-foreground">
+                        <span className="truncate block" title={report.property_address}>
+                          {getDisplayAddress(report.property_address, 80)}
+                        </span>
+                      </td>
                       <td className="p-4 text-sm text-muted-foreground">
                         {format(new Date(report.created_at), 'dd/MM/yyyy')}
                       </td>

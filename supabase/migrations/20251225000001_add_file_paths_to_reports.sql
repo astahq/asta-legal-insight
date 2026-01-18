@@ -1,0 +1,2 @@
+ALTER TABLE public.reports
+ADD COLUMN IF NOT EXISTS file_paths TEXT[] DEFAULT ARRAY[]::TEXT[];
