@@ -1,15 +1,15 @@
-import { useState, useCallback } from "react";
-import { Upload, Info, ChevronRight, Pencil, Loader2, ExternalLink, Star } from "lucide-react";
+import { useState, useCallback, useMemo, useRef } from "react";
+import { Upload, Info, ChevronRight, Pencil, Loader2, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { firecrawlApi } from "@/lib/api/firecrawl";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { processLegalPack, uploadPdfsToStorage } from "@/lib/api/legalPackProcessor";
 
 interface ScrapedProperty {
   title?: string;
@@ -21,16 +21,42 @@ interface ScrapedProperty {
   };
 }
 
+const FILE_ACCEPT_TYPES = ".pdf,.docx,.txt";
+const MAX_FILE_SIZE_MB = 50;
+const PROPERTY_URL_PLACEHOLDER = "https://online.auctionhouse.co.uk/lot/details/...";
+const DEFAULT_PROPERTY_NAME = "Property Analysis";
+const DESCRIPTION_MAX_LENGTH = 100;
+
+function extractPropertyAddress(
+  scrapedData: ScrapedProperty | null,
+  uploadedFiles: File[]
+): string {
+  if (scrapedData?.metadata?.title) {
+    return scrapedData.metadata.title;
+  }
+  
+  if (scrapedData?.metadata?.description) {
+    return scrapedData.metadata.description.slice(0, DESCRIPTION_MAX_LENGTH);
+  }
+  
+  if (uploadedFiles.length > 0) {
+    return uploadedFiles[0].name.replace(/\.[^/.]+$/, "");
+  }
+  
+  return DEFAULT_PROPERTY_NAME;
+}
+
 export function UploadSection() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [isDragging, setIsDragging] = useState(false);
   const [propertyUrl, setPropertyUrl] = useState("");
   const [isEditingUrl, setIsEditingUrl] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [scrapedData, setScrapedData] = useState<ScrapedProperty | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [addToWatchlist, setAddToWatchlist] = useState(false);
 
@@ -48,61 +74,133 @@ export function UploadSection() {
     e.preventDefault();
     setIsDragging(false);
     const files = Array.from(e.dataTransfer.files);
-    setUploadedFiles(prev => [...prev, ...files]);
+    setUploadedFiles((prev) => [...prev, ...files]);
   }, []);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setUploadedFiles(prev => [...prev, ...files]);
-  };
+    setUploadedFiles((prev) => [...prev, ...files]);
+  }, []);
 
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  const removeFile = useCallback((index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
-  const scrapePropertyUrl = async () => {
-    if (!propertyUrl.trim()) return;
-    
+  const handleUploadZoneClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setPropertyUrl(e.target.value);
+  }, []);
+
+  const handleUrlBlur = useCallback(() => {
+    setIsEditingUrl(false);
+  }, []);
+
+  const handleUrlKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      setIsEditingUrl(false);
+    }
+  }, []);
+
+  const handleUrlDisplayClick = useCallback(() => {
+    if (!isAnalyzing) {
+      setIsEditingUrl(true);
+    }
+  }, [isAnalyzing]);
+
+  const handleWatchlistChange = useCallback((checked: boolean) => {
+    setAddToWatchlist(checked);
+  }, []);
+
+  const isFormValid = useMemo(() => {
+    return uploadedFiles.length > 0 || propertyUrl.trim().length > 0;
+  }, [uploadedFiles.length, propertyUrl]);
+
+  const isButtonDisabled = useMemo(() => {
+    return isLoading || isAnalyzing || !isFormValid;
+  }, [isLoading, isAnalyzing, isFormValid]);
+
+  const buttonContent = useMemo(() => {
+    if (isAnalyzing) {
+      return (
+        <>
+          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+          Creating report...
+        </>
+      );
+    }
+    if (isLoading) {
+      return (
+        <>
+          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+          Extracting property details...
+        </>
+      );
+    }
+    return (
+      <>
+        Analysis Documents
+        <ChevronRight className="w-5 h-5 ml-2" />
+      </>
+    );
+  }, [isAnalyzing, isLoading]);
+
+
+  const scrapePropertyUrl = useCallback(async (url: string): Promise<ScrapedProperty | null> => {
     setIsLoading(true);
-    setScrapedData(null);
-
     try {
-      const response = await firecrawlApi.scrape(propertyUrl, {
+      const response = await firecrawlApi.scrape(url, {
         formats: ['markdown'],
         onlyMainContent: true,
       });
 
       if (response.success) {
         const data = response.data || response;
-        setScrapedData({
+        return {
           markdown: data.markdown || data.data?.markdown,
           metadata: data.metadata || data.data?.metadata,
-        });
-        toast({
-          title: "Property details extracted",
-          description: "We've successfully scraped the auction listing.",
-        });
-      } else {
-        toast({
-          title: "Failed to scrape URL",
-          description: response.error || "Could not extract property details.",
-          variant: "destructive",
-        });
+        };
       }
+      return null;
     } catch (error) {
       console.error('Error scraping:', error);
-      toast({
-        title: "Error",
-        description: "Failed to scrape property URL. Please check the URL and try again.",
-        variant: "destructive",
-      });
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleAnalyze = async () => {
-    if (!scrapedData && uploadedFiles.length === 0) {
+  const createReport = useCallback(async (
+    reportId: string,
+    propertyAddress: string,
+    scrapedData: ScrapedProperty | null,
+    filePaths: string[]
+  ) => {
+    const insertData = {
+      id: reportId,
+      property_address: propertyAddress,
+      property_url: propertyUrl || null,
+      status: 'processing' as const,
+      scraped_data: scrapedData as unknown as import('@/integrations/supabase/types').Json | null,
+      on_watchlist: addToWatchlist,
+      user_id: user!.id,
+      documents_count: uploadedFiles.length,
+      file_paths: filePaths,
+    };
+
+    const { error: insertError } = await supabase
+      .from('reports')
+      .insert(insertData as import('@/integrations/supabase/types').Database['public']['Tables']['reports']['Insert'] & { file_paths: string[] });
+
+    if (insertError) {
+      throw new Error(`Failed to create report: ${insertError.message}`);
+    }
+  }, [propertyUrl, addToWatchlist, uploadedFiles.length, user]);
+
+  const handleAnalyze = useCallback(async () => {
+    if (!isFormValid) {
       toast({
         title: "No content to analyze",
         description: "Please upload files or enter a property URL.",
@@ -123,90 +221,58 @@ export function UploadSection() {
     setIsAnalyzing(true);
 
     try {
-      // Extract property address from metadata or use a placeholder
-      const propertyAddress = scrapedData?.metadata?.title || 
-        scrapedData?.metadata?.description?.slice(0, 100) || 
-        uploadedFiles[0]?.name.replace(/\.[^/.]+$/, "") || 
-        "Property Analysis";
+      let scrapedDataResult: ScrapedProperty | null = null;
 
-      // 1. Create a report in the database
-      const { data: reportData, error: reportError } = await supabase
-        .from('reports')
-        .insert([{
-          property_address: propertyAddress,
-          property_url: propertyUrl || null,
-          status: 'processing',
-          scraped_data: scrapedData as any || null,
-          on_watchlist: addToWatchlist,
-          user_id: user.id,
-          documents_count: uploadedFiles.length,
-        }])
-        .select('id')
-        .single();
-
-      if (reportError) throw reportError;
-      
-      const reportId = reportData.id;
-      console.log('Created report:', reportId);
-
-      // 2. Upload files to Supabase Storage and create document records
-      for (const file of uploadedFiles) {
-        const filePath = `${user.id}/${reportId}/${file.name}`;
-        
-        // Upload to storage
-        const { error: uploadError } = await supabase.storage
-          .from('legal-packs')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false,
-          });
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          // Continue with other files even if one fails
-          continue;
-        }
-
-        // Create document record (text extraction will happen in edge function)
-        await supabase.from('documents').insert({
-          report_id: reportId,
-          user_id: user.id,
-          file_path: filePath,
-          file_name: file.name,
-          mime_type: file.type,
-          size_bytes: file.size,
-          extracted_text: '', // Will be populated by edge function
-        });
+      if (propertyUrl.trim()) {
+        scrapedDataResult = await scrapePropertyUrl(propertyUrl);
       }
 
-      // 3. Trigger the processing edge function
-      const { error: processError } = await supabase.functions.invoke('process-legal-pack', {
-        body: { reportId, userId: user.id },
+      if (uploadedFiles.length === 0 && !scrapedDataResult) {
+        throw new Error('Please upload files or provide a valid property URL');
+      }
+
+      const propertyAddress = extractPropertyAddress(scrapedDataResult, uploadedFiles);
+      const reportId = crypto.randomUUID();
+
+      const filePaths = uploadedFiles.length > 0 
+        ? await uploadPdfsToStorage(uploadedFiles, user.id)
+        : [];
+
+      await createReport(reportId, propertyAddress, scrapedDataResult, filePaths);
+
+      await processLegalPack({
+        reportId,
+        userId: user.id,
+        url: propertyUrl || undefined,
       });
-
-      if (processError) {
-        console.error('Process error:', processError);
-        // Don't throw - report is created, processing may still work
-      }
 
       toast({
         title: addToWatchlist ? "Report created and added to watchlist" : "Report created",
         description: "Your analysis is now processing. You'll see results shortly.",
       });
 
-      // Navigate to the report detail page
       navigate(`/reports/${reportId}`);
     } catch (error) {
       console.error('Error creating report:', error);
       toast({
         title: "Error",
-        description: "Failed to create report. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create report. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsAnalyzing(false);
     }
-  }
+  }, [
+    isFormValid,
+    user,
+    propertyUrl,
+    uploadedFiles,
+    scrapePropertyUrl,
+    createReport,
+    addToWatchlist,
+    navigate,
+    toast,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -224,7 +290,6 @@ export function UploadSection() {
           <span>Not legal advice - your smarter due-diligence co-pilot</span>
         </div>
 
-        {/* Upload Zone */}
         <div
           className={cn(
             "upload-zone min-h-[200px]",
@@ -233,13 +298,13 @@ export function UploadSection() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => document.getElementById("file-input")?.click()}
+          onClick={handleUploadZoneClick}
         >
           <input
-            id="file-input"
+            ref={fileInputRef}
             type="file"
             className="hidden"
-            accept=".pdf,.docx,.txt"
+            accept={FILE_ACCEPT_TYPES}
             multiple
             onChange={handleFileSelect}
           />
@@ -252,32 +317,35 @@ export function UploadSection() {
                 Drag and drop files here, or click to browse
               </p>
               <p className="text-sm text-muted-foreground/70 mt-1">
-                Supports PDF, DOCX, TXT up to 50MB per file
+                Supports PDF, DOCX, TXT up to {MAX_FILE_SIZE_MB}MB per file
               </p>
             </div>
           </div>
         </div>
 
-        {/* Uploaded Files List */}
         {uploadedFiles.length > 0 && (
           <div className="mt-4 space-y-2">
             <p className="text-sm font-medium text-foreground">Uploaded files:</p>
-            {uploadedFiles.map((file, index) => (
-              <div key={index} className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2">
-                <span className="text-sm text-foreground truncate">{file.name}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFile(index);
-                  }}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  Remove
-                </Button>
-              </div>
-            ))}
+            {uploadedFiles.map((file, index) => {
+              const handleRemoveClick = (e: React.MouseEvent) => {
+                e.stopPropagation();
+                removeFile(index);
+              };
+
+              return (
+                <div key={`${file.name}-${index}`} className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2">
+                  <span className="text-sm text-foreground truncate">{file.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveClick}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -292,46 +360,34 @@ export function UploadSection() {
               extract additional property information.
             </p>
           </div>
-          <div className="flex-1 flex items-center gap-2">
+          <div className="flex-1 min-w-0 flex items-center gap-2">
             {isEditingUrl ? (
               <Input
                 type="url"
-                placeholder="https://online.auctionhouse.co.uk/lot/details/..."
+                placeholder={PROPERTY_URL_PLACEHOLDER}
                 value={propertyUrl}
-                onChange={(e) => setPropertyUrl(e.target.value)}
-                onBlur={() => {
-                  setIsEditingUrl(false);
-                  if (propertyUrl.trim()) {
-                    scrapePropertyUrl();
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setIsEditingUrl(false);
-                    if (propertyUrl.trim()) {
-                      scrapePropertyUrl();
-                    }
-                  }
-                }}
+                onChange={handleUrlChange}
+                onBlur={handleUrlBlur}
+                onKeyDown={handleUrlKeyDown}
                 autoFocus
-                className="flex-1"
-                disabled={isLoading}
+                className="flex-1 min-w-0"
+                disabled={isLoading || isAnalyzing}
               />
             ) : (
               <div 
-                className="flex-1 flex items-center justify-between bg-background border border-border rounded-md px-3 py-2 cursor-text"
-                onClick={() => setIsEditingUrl(true)}
+                className="flex-1 min-w-0 flex items-center justify-between bg-background border border-border rounded-md px-3 py-2 cursor-text"
+                onClick={handleUrlDisplayClick}
               >
                 <span className={cn(
-                  "text-sm truncate",
+                  "text-sm truncate min-w-0",
                   propertyUrl ? "text-foreground" : "text-muted-foreground"
                 )}>
-                  {propertyUrl || "https://online.auctionhouse.co.uk/lot/details/..."}
+                  {propertyUrl || PROPERTY_URL_PLACEHOLDER}
                 </span>
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                {isLoading || isAnalyzing ? (
+                  <Loader2 className="w-4 h-4 text-primary animate-spin flex-shrink-0 ml-2" />
                 ) : (
-                  <Pencil className="w-4 h-4 text-muted-foreground" />
+                  <Pencil className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-2" />
                 )}
               </div>
             )}
@@ -339,52 +395,12 @@ export function UploadSection() {
         </div>
       </div>
 
-      {/* Scraped Property Data */}
-      {scrapedData && (
-        <Card className="p-4 bg-card border-border">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium text-foreground">Extracted Property Information</h4>
-            {scrapedData.metadata?.sourceURL && (
-              <a
-                href={scrapedData.metadata.sourceURL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-sm text-primary hover:underline"
-              >
-                View original <ExternalLink className="w-3 h-3" />
-              </a>
-            )}
-          </div>
-          
-          {scrapedData.metadata?.title && (
-            <p className="text-sm font-medium text-foreground mb-2">
-              {scrapedData.metadata.title}
-            </p>
-          )}
-          
-          {scrapedData.metadata?.description && (
-            <p className="text-sm text-muted-foreground mb-3">
-              {scrapedData.metadata.description}
-            </p>
-          )}
-          
-          {scrapedData.markdown && (
-            <div className="bg-muted/30 rounded-md p-3 max-h-60 overflow-y-auto">
-              <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-sans">
-                {scrapedData.markdown.slice(0, 2000)}
-                {scrapedData.markdown.length > 2000 && '...'}
-              </pre>
-            </div>
-          )}
-        </Card>
-      )}
 
-      {/* Add to Watchlist Option */}
       <div className="flex items-center space-x-2">
         <Checkbox 
           id="watchlist" 
           checked={addToWatchlist}
-          onCheckedChange={(checked) => setAddToWatchlist(checked === true)}
+          onCheckedChange={handleWatchlistChange}
         />
         <label
           htmlFor="watchlist"
@@ -395,28 +411,12 @@ export function UploadSection() {
         </label>
       </div>
 
-      {/* Analyze Button */}
       <Button 
         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-base font-medium"
         onClick={handleAnalyze}
-        disabled={isLoading || isAnalyzing || (uploadedFiles.length === 0 && !scrapedData)}
+        disabled={isButtonDisabled}
       >
-        {isAnalyzing ? (
-          <>
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            Creating report...
-          </>
-        ) : isLoading ? (
-          <>
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            Extracting property details...
-          </>
-        ) : (
-          <>
-            Analysis Documents
-            <ChevronRight className="w-5 h-5 ml-2" />
-          </>
-        )}
+        {buttonContent}
       </Button>
     </div>
   );
