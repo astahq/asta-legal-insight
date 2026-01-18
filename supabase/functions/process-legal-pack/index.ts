@@ -476,14 +476,6 @@ Sections to analyze:
                       auctionDate: { type: "string" },
                     },
                   },
-                  asta_score: {
-                    type: "object",
-                    properties: {
-                      score: { type: "number" },
-                      maxScore: { type: "number" },
-                      description: { type: "string" },
-                    },
-                  },
                 },
                 required: ["sections"],
               },

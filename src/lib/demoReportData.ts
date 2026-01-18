@@ -37,12 +37,6 @@ export interface PropertyDetails {
   administrationChargeBand?: string;
 }
 
-export interface ASTAScore {
-  score: number;
-  maxScore: number;
-  description: string;
-}
-
 export interface ReportAnalysis {
   title: {
     issues: ReportIssue[];
@@ -71,7 +65,6 @@ export interface ReportAnalysis {
   };
   documents: Document[];
   propertyDetails: PropertyDetails;
-  astaScore?: ASTAScore;
 }
 
 export const demoReportAnalysis: ReportAnalysis = {
@@ -146,10 +139,5 @@ export const demoReportAnalysis: ReportAnalysis = {
     guidePrice: '£630,000',
     auctionDate: '23 October 2025',
     auctionDateNote: '(in two days)',
-  },
-  astaScore: {
-    score: 6.2,
-    maxScore: 10,
-    description: 'Strong flip / BTL opportunity – low risk, high upside',
   },
 };

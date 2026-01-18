@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { GitCompare, Home, FileText, Loader2 } from "lucide-react";
+import { getDisplayAddress } from "@/lib/utils";
 
 const SECTION_LABELS: Record<string, string> = {
   title: "Title",
@@ -173,9 +174,9 @@ export default function CompareProperties() {
                           checked={selectedReports.includes(report.id)}
                           onCheckedChange={() => toggleReport(report.id)}
                         />
-                        <div className="flex-1">
-                          <p className="font-medium text-foreground">
-                            {report.property_address}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate" title={report.property_address}>
+                            {getDisplayAddress(report.property_address, 80)}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {report.property_value
@@ -232,9 +233,9 @@ export default function CompareProperties() {
                 <div className="grid gap-4" style={{ gridTemplateColumns: `200px repeat(${selectedReportData?.length || 0}, 1fr)` }}>
                   <div className="font-medium text-muted-foreground">Section</div>
                   {selectedReportData?.map((report) => (
-                    <Card key={report.id} className="p-3">
-                      <p className="font-semibold text-foreground truncate">
-                        {report.property_address}
+                    <Card key={report.id} className="p-3 min-w-0">
+                      <p className="font-semibold text-foreground truncate" title={report.property_address}>
+                        {getDisplayAddress(report.property_address, 80)}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {report.property_value
