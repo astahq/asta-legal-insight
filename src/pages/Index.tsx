@@ -7,14 +7,9 @@ import { AuctionCalendar } from "@/components/dashboard/AuctionCalendar";
 const Index = () => {
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-7xl">
-        {/* Stats Section */}
+      <div className="space-y-6 w-full">
         <StatsCards />
-
-        {/* Upload Section */}
         <UploadSection />
-
-        {/* Reports and Calendar Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <LastReports />
           <AuctionCalendar />
