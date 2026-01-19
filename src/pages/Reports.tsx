@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Clock, Star, AlertCircle, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +47,7 @@ function StatusBadge({ status }: { status: string }) {
 const Reports = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: reports, isLoading } = useQuery({
     queryKey: ['reports'],
@@ -108,7 +109,10 @@ const Reports = () => {
                 </thead>
                 <tbody>
                   {/* Demo Report Row */}
-                  <tr className="border-b border-border hover:bg-muted/50 bg-primary/5">
+                  <tr 
+                    className="border-b border-border hover:bg-muted/50 bg-primary/5 cursor-pointer"
+                    onClick={() => navigate("/reports/demo")}
+                  >
                     <td className="p-4 text-sm text-foreground">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="truncate" title={demoReport.property_address}>
@@ -127,14 +131,23 @@ const Reports = () => {
                       <Star className="w-4 h-4 text-muted-foreground" />
                     </td>
                     <td className="p-4">
-                      <Button variant="outline" size="sm" asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={(e) => e.stopPropagation()}
+                        asChild
+                      >
                         <Link to="/reports/demo">View Report</Link>
                       </Button>
                     </td>
                   </tr>
                   {/* User Reports */}
                   {reports?.map((report) => (
-                    <tr key={report.id} className="border-b border-border last:border-0 hover:bg-muted/50">
+                    <tr 
+                      key={report.id} 
+                      className="border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer"
+                      onClick={() => navigate(`/reports/${report.id}`)}
+                    >
                       <td className="p-4 text-sm text-foreground">
                         <span className="truncate block" title={report.property_address}>
                           {getDisplayAddress(report.property_address, 80)}
@@ -150,7 +163,10 @@ const Reports = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => toggleWatchlist.mutate({ id: report.id, on_watchlist: report.on_watchlist })}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleWatchlist.mutate({ id: report.id, on_watchlist: report.on_watchlist });
+                          }}
                           className={cn(
                             report.on_watchlist ? "text-warning" : "text-muted-foreground"
                           )}
@@ -159,7 +175,12 @@ const Reports = () => {
                         </Button>
                       </td>
                       <td className="p-4">
-                        <Button variant="outline" size="sm" asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={(e) => e.stopPropagation()}
+                          asChild
+                        >
                           <Link to={`/reports/${report.id}`}>View Report</Link>
                         </Button>
                       </td>

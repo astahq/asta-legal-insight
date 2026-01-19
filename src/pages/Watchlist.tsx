@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Star, CheckCircle2, Clock, AlertCircle, Loader2, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { cn, getDisplayAddress } from "@/lib/utils";
@@ -38,6 +38,7 @@ function StatusBadge({ status }: { status: string }) {
 const Watchlist = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: reports, isLoading } = useQuery({
     queryKey: ['watchlist'],
@@ -120,7 +121,11 @@ const Watchlist = () => {
                 </thead>
                 <tbody>
                   {reports.map((report) => (
-                    <tr key={report.id} className="border-b border-border last:border-0 hover:bg-muted/50">
+                    <tr 
+                      key={report.id} 
+                      className="border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer"
+                      onClick={() => navigate(`/reports/${report.id}`)}
+                    >
                       <td className="p-4 text-sm text-foreground">
                         <span className="truncate block" title={report.property_address}>
                           {getDisplayAddress(report.property_address, 80)}
@@ -134,13 +139,21 @@ const Watchlist = () => {
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={(e) => e.stopPropagation()}
+                            asChild
+                          >
                             <Link to={`/reports/${report.id}`}>View Report</Link>
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => removeFromWatchlist.mutate(report.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFromWatchlist.mutate(report.id);
+                            }}
                             className="text-muted-foreground hover:text-destructive"
                           >
                             <Trash2 className="w-4 h-4" />
