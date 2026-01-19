@@ -1,8 +1,9 @@
-import { Search, Bell, Plus, LogOut } from "lucide-react";
+import { Plus, LogOut, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSidebar } from "@/contexts/SidebarContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +19,7 @@ interface HeaderProps {
 
 export function Header({ userName, avatarUrl }: HeaderProps) {
   const { signOut } = useAuth();
+  const { toggleSidebar, isMobile } = useSidebar();
 
   const initials = userName
     .split(" ")
@@ -27,9 +29,19 @@ export function Header({ userName, avatarUrl }: HeaderProps) {
     .slice(0, 2);
 
   return (
-    <header className="h-16 bg-card border-b border-border px-6 flex items-center justify-between">
-      {/* User Welcome */}
+    <header className="h-16 bg-card border-b border-border px-4 md:px-6 flex items-center justify-between">
       <div className="flex items-center gap-3">
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="md:hidden"
+            aria-label="Toggle sidebar"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
@@ -57,18 +69,18 @@ export function Header({ userName, avatarUrl }: HeaderProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <div>
+        <div className="hidden sm:block">
           <h2 className="font-semibold text-foreground">{userName}</h2>
           <p className="text-sm text-muted-foreground">Welcome back to Asta 👋</p>
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-3">
         <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <Link to="/upload">
             <Plus className="w-4 h-4 mr-2" />
-            New Property Analysis
+            <span className="hidden sm:inline">New Property Analysis</span>
+            <span className="sm:hidden">New</span>
           </Link>
         </Button>
       </div>

@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import astaLogo from "@/assets/asta-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSidebar } from "@/contexts/SidebarContext";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface NavItem {
   icon: React.ElementType;
@@ -36,21 +38,27 @@ const bottomNavItems: NavItem[] = [
   { icon: Settings, label: "Billing & Settings", href: "/settings" },
 ];
 
-export function Sidebar() {
+function SidebarContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { isMobile, setIsOpen } = useSidebar();
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
   };
 
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  };
+
   return (
-    <aside className="w-64 h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
-      {/* Logo */}
+    <div className="w-64 h-full bg-sidebar flex flex-col">
       <div className="p-4 border-b border-sidebar-border">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2" onClick={handleLinkClick}>
           <div className="w-8 h-8 flex items-center justify-center">
             <img src={astaLogo} alt="Asta" className="w-8 h-8 object-contain" />
           </div>
@@ -58,17 +66,15 @@ export function Sidebar() {
         </Link>
       </div>
 
-      {/* New Analysis Button */}
       <div className="p-4">
         <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Link to="/upload">
+          <Link to="/upload" onClick={handleLinkClick}>
             <Plus className="w-4 h-4 mr-2" />
             New Property Analysis
           </Link>
         </Button>
       </div>
 
-      {/* Main Navigation */}
       <nav className="flex-1 px-3">
         <ul className="space-y-1">
           {mainNavItems.map((item) => (
@@ -88,6 +94,7 @@ export function Sidebar() {
               ) : (
                 <Link
                   to={item.href}
+                  onClick={handleLinkClick}
                   className={cn(
                     "nav-item",
                     location.pathname === item.href && "nav-item-active"
@@ -107,13 +114,13 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      {/* Bottom Navigation */}
       <nav className="p-3 border-t border-sidebar-border">
         <ul className="space-y-1">
           {bottomNavItems.map((item) => (
             <li key={item.label}>
               <Link 
-                to={item.href} 
+                to={item.href}
+                onClick={handleLinkClick}
                 className={cn(
                   "nav-item",
                   location.pathname === item.href && "nav-item-active"
@@ -126,7 +133,8 @@ export function Sidebar() {
           ))}
           <li>
             <Link 
-              to="/support" 
+              to="/support"
+              onClick={handleLinkClick}
               className={cn(
                 "nav-item",
                 location.pathname === "/support" && "nav-item-active"
@@ -147,6 +155,26 @@ export function Sidebar() {
           </li>
         </ul>
       </nav>
+    </div>
+  );
+}
+
+export function Sidebar() {
+  const { isOpen, setIsOpen, isMobile } = useSidebar();
+
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border">
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <aside className="hidden md:flex border-r border-sidebar-border">
+      <SidebarContent />
     </aside>
   );
 }
