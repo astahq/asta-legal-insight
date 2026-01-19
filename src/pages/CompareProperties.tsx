@@ -195,7 +195,7 @@ export default function CompareProperties() {
                     <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
                     <p>No completed reports available for comparison.</p>
                     <p className="text-sm">
-                      Upload and analyze properties first.
+                      Upload and analyse properties first.
                     </p>
                   </div>
                 )}

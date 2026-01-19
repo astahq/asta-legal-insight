@@ -350,8 +350,7 @@ serve(async (req) => {
     }
 
     if (!combinedText.trim()) {
-      // No content to analyze, mark as completed with Unknown sections
-      console.log("No content to analyze, creating default sections");
+      console.log("No content to analyse, creating default sections");
 
       for (const sectionKey of SECTION_KEYS) {
         await supabase.from("report_sections").upsert(
@@ -372,7 +371,7 @@ serve(async (req) => {
         .eq("id", reportId);
 
       return new Response(
-        JSON.stringify({ success: true, message: "No content to analyze" }),
+        JSON.stringify({ success: true, message: "No content to analyse" }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
@@ -383,7 +382,7 @@ serve(async (req) => {
     console.log(`Sending ${combinedText.length} chars to OpenAI for analysis`);
 
     const systemPrompt = `You are an expert UK property law analyst specializing in auction legal packs. 
-Analyze the provided documents and extract information for each section.
+Analyse the provided documents and extract information for each section.
 
 IMPORTANT RULES:
 - Only use information explicitly stated in the documents
@@ -397,7 +396,7 @@ For each section, provide a JSON object with:
 - "issues": An array of issue objects, each with "severity" (critical/warning/info) and "text"
 - "details": Any additional relevant details
 
-Sections to analyze:
+Sections to analyse:
 1. Title - Title registration status, any title defects, restrictions
 2. Ownership - Current and previous owners, seller information
 3. Charges and Money - Mortgages, charges, debts against property
@@ -420,7 +419,7 @@ Sections to analyze:
           { role: "system", content: systemPrompt },
           {
             role: "user",
-            content: `Analyze this property legal pack:\n\n${combinedText.slice(
+            content: `Analyse this property legal pack:\n\n${combinedText.slice(
               0,
               100000
             )}`,

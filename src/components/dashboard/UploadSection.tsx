@@ -56,7 +56,7 @@ export function UploadSection() {
   const [propertyUrl, setPropertyUrl] = useState("");
   const [isEditingUrl, setIsEditingUrl] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAnalysing, setIsAnalysing] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [addToWatchlist, setAddToWatchlist] = useState(false);
 
@@ -105,10 +105,10 @@ export function UploadSection() {
   }, []);
 
   const handleUrlDisplayClick = useCallback(() => {
-    if (!isAnalyzing) {
+    if (!isAnalysing) {
       setIsEditingUrl(true);
     }
-  }, [isAnalyzing]);
+  }, [isAnalysing]);
 
   const handleWatchlistChange = useCallback((checked: boolean) => {
     setAddToWatchlist(checked);
@@ -119,11 +119,11 @@ export function UploadSection() {
   }, [uploadedFiles.length, propertyUrl]);
 
   const isButtonDisabled = useMemo(() => {
-    return isLoading || isAnalyzing || !isFormValid;
-  }, [isLoading, isAnalyzing, isFormValid]);
+    return isLoading || isAnalysing || !isFormValid;
+  }, [isLoading, isAnalysing, isFormValid]);
 
   const buttonContent = useMemo(() => {
-    if (isAnalyzing) {
+    if (isAnalysing) {
       return (
         <>
           <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -145,7 +145,7 @@ export function UploadSection() {
         <ChevronRight className="w-5 h-5 ml-2" />
       </>
     );
-  }, [isAnalyzing, isLoading]);
+  }, [isAnalysing, isLoading]);
 
 
   const scrapePropertyUrl = useCallback(async (url: string): Promise<ScrapedProperty | null> => {
@@ -199,10 +199,10 @@ export function UploadSection() {
     }
   }, [propertyUrl, addToWatchlist, uploadedFiles.length, user]);
 
-  const handleAnalyze = useCallback(async () => {
+  const handleAnalyse = useCallback(async () => {
     if (!isFormValid) {
       toast({
-        title: "No content to analyze",
+        title: "No content to analyse",
         description: "Please upload files or enter a property URL.",
         variant: "destructive",
       });
@@ -212,13 +212,13 @@ export function UploadSection() {
     if (!user) {
       toast({
         title: "Authentication required",
-        description: "Please sign in to analyze documents.",
+        description: "Please sign in to analyse documents.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsAnalyzing(true);
+    setIsAnalysing(true);
 
     try {
       let scrapedDataResult: ScrapedProperty | null = null;
@@ -260,7 +260,7 @@ export function UploadSection() {
         variant: "destructive",
       });
     } finally {
-      setIsAnalyzing(false);
+      setIsAnalysing(false);
     }
   }, [
     isFormValid,
@@ -371,7 +371,7 @@ export function UploadSection() {
                 onKeyDown={handleUrlKeyDown}
                 autoFocus
                 className="flex-1 min-w-0"
-                disabled={isLoading || isAnalyzing}
+                disabled={isLoading || isAnalysing}
               />
             ) : (
               <div 
@@ -384,7 +384,7 @@ export function UploadSection() {
                 )}>
                   {propertyUrl || PROPERTY_URL_PLACEHOLDER}
                 </span>
-                {isLoading || isAnalyzing ? (
+                {isLoading || isAnalysing ? (
                   <Loader2 className="w-4 h-4 text-primary animate-spin flex-shrink-0 ml-2" />
                 ) : (
                   <Pencil className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-2" />
@@ -413,7 +413,7 @@ export function UploadSection() {
 
       <Button 
         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-base font-medium"
-        onClick={handleAnalyze}
+        onClick={handleAnalyse}
         disabled={isButtonDisabled}
       >
         {buttonContent}
