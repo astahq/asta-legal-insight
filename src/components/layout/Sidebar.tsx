@@ -16,6 +16,7 @@ import astaLogo from "@/assets/asta-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { usePostHog } from "posthog-js/react";
 
 interface NavItem {
   icon: React.ElementType;
@@ -24,6 +25,7 @@ interface NavItem {
   badge?: string;
   badgeColor?: string;
   disabled?: boolean;
+  posthogEventName?: string;
 }
 
 const mainNavItems: NavItem[] = [
@@ -31,7 +33,15 @@ const mainNavItems: NavItem[] = [
   { icon: FileText, label: "Reports", href: "/reports" },
   { icon: Star, label: "Watchlist", href: "/watchlist" },
   { icon: GitCompare, label: "Compare Properties", href: "/compare", badge: "NEW", badgeColor: "bg-primary text-primary-foreground" },
-  { icon: Bell, label: "Auction Alerts", href: "/alerts", badge: "coming soon", badgeColor: "bg-destructive/10 text-destructive", disabled: true },
+  { 
+    icon: Bell, 
+    label: "Auction Alerts", 
+    href: "/alerts", 
+    badge: "coming soon", 
+    badgeColor: "bg-destructive/10 text-destructive", 
+    disabled: true,
+    posthogEventName: "sidebar_auction_alerts_button_clicked"
+  },
 ];
 
 const bottomNavItems: NavItem[] = [
@@ -39,6 +49,7 @@ const bottomNavItems: NavItem[] = [
 ];
 
 function SidebarContent() {
+  const posthog = usePostHog();
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
@@ -53,8 +64,19 @@ function SidebarContent() {
     if (isMobile) {
       setIsOpen(false);
     }
+
+    posthog.capture("sidebar_new_property_analysis_button_clicked", {
+      button_name: "New Property Analysis",
+      href: "/upload",
+    });
   };
 
+  const handleNavItemClick = (eventName: string, buttonText: string) => {
+    posthog.capture(eventName, {
+      button_text: buttonText,
+    });
+  };
+  
   return (
     <div className="w-64 h-full bg-sidebar flex flex-col">
       <div className="p-4 border-b border-sidebar-border">
@@ -82,6 +104,11 @@ function SidebarContent() {
               {item.disabled ? (
                 <span
                   className="nav-item opacity-50 cursor-not-allowed"
+                  onClick={() => {
+                    if (item.posthogEventName) {
+                      handleNavItemClick(item.posthogEventName, item.label);
+                    }
+                  }}
                 >
                   <item.icon className="w-5 h-5" />
                   <span className="flex-1">{item.label}</span>
@@ -94,7 +121,14 @@ function SidebarContent() {
               ) : (
                 <Link
                   to={item.href}
-                  onClick={handleLinkClick}
+                  onClick={() => {
+                    if (isMobile) {
+                      setIsOpen(false);
+                    }
+                    if (item.posthogEventName) {
+                      handleNavItemClick(item.posthogEventName, item.label);
+                    }
+                  }}
                   className={cn(
                     "nav-item",
                     location.pathname === item.href && "nav-item-active"
@@ -120,7 +154,14 @@ function SidebarContent() {
             <li key={item.label}>
               <Link 
                 to={item.href}
-                onClick={handleLinkClick}
+                onClick={() => {
+                  if (isMobile) {
+                    setIsOpen(false);
+                  }
+                  if (item.posthogEventName) {
+                    handleNavItemClick(item.posthogEventName, item.label ?? "sidebar_button_clicked");
+                  }
+                }}
                 className={cn(
                   "nav-item",
                   location.pathname === item.href && "nav-item-active"
@@ -134,7 +175,12 @@ function SidebarContent() {
           <li>
             <Link 
               to="/support"
-              onClick={handleLinkClick}
+              onClick={() => {
+                if (isMobile) {
+                  setIsOpen(false);
+                }
+                handleNavItemClick("sidebar_support_button_clicked", "Support");
+              }}
               className={cn(
                 "nav-item",
                 location.pathname === "/support" && "nav-item-active"

@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { usePostHog } from "posthog-js/react";
 
 interface HeaderProps {
   userName: string;
@@ -18,8 +19,16 @@ interface HeaderProps {
 }
 
 export function Header({ userName, avatarUrl }: HeaderProps) {
+  const posthog = usePostHog();
   const { signOut } = useAuth();
   const { toggleSidebar, isMobile } = useSidebar();
+
+  const handleClickNewPropertyAnalysis = () => {
+    posthog.capture("header_new_property_analysis_button_clicked", {
+      button_name: "New Property Analysis",
+      href: "/upload",
+    });
+  };
 
   const initials = userName
     .split(" ")
@@ -77,7 +86,7 @@ export function Header({ userName, avatarUrl }: HeaderProps) {
 
       <div className="flex items-center gap-3">
         <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Link to="/upload">
+          <Link to="/upload" onClick={handleClickNewPropertyAnalysis}>
             <Plus className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">New Property Analysis</span>
             <span className="sm:hidden">New</span>

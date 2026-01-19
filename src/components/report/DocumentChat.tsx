@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { usePostHog } from "posthog-js/react";
 
 interface Message {
   role: "user" | "assistant";
@@ -19,6 +20,7 @@ interface DocumentChatProps {
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/document-chat`;
 
 export function DocumentChat({ reportId, propertyAddress }: DocumentChatProps) {
+  const posthog = usePostHog();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -106,6 +108,10 @@ export function DocumentChat({ reportId, propertyAddress }: DocumentChatProps) {
           }
         }
       }
+
+      posthog.capture("talk_with_documents_message_sent", {
+        button_name: "Talk with Documents",
+      });
     } catch (error) {
       console.error("Chat error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to send message");
@@ -123,10 +129,19 @@ export function DocumentChat({ reportId, propertyAddress }: DocumentChatProps) {
     }
   };
 
+  const handleOpen = () => {
+    setIsOpen(true);
+
+    posthog.capture("talk_with_documents_button_clicked", {
+      button_name: "Talk with Documents",
+    });
+  };
+
+
   if (!isOpen) {
     return (
       <Button
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpen}
         className="bg-primary hover:bg-primary/90 text-primary-foreground"
       >
         <MessageCircle className="w-4 h-4 mr-2" />

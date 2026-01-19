@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { processLegalPack, uploadPdfsToStorage } from "@/lib/api/legalPackProcessor";
+import { usePostHog } from "posthog-js/react";
 
 interface ScrapedProperty {
   title?: string;
@@ -50,6 +51,7 @@ export function UploadSection() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const posthog = usePostHog();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isDragging, setIsDragging] = useState(false);
@@ -200,6 +202,10 @@ export function UploadSection() {
   }, [propertyUrl, addToWatchlist, uploadedFiles.length, user]);
 
   const handleAnalyse = useCallback(async () => {
+    posthog.capture("upload_section_new_property_analysis_button_clicked", {
+      button_name: "New Property Analysis",
+    });
+
     if (!isFormValid) {
       toast({
         title: "No content to analyse",
@@ -251,6 +257,10 @@ export function UploadSection() {
         description: "Your analysis is now processing. You'll see results shortly.",
       });
 
+      posthog.capture("upload_section_new_property_analysis_created", {
+        button_name: "New Property Analysis",
+      });
+
       navigate(`/reports/${reportId}`);
     } catch (error) {
       console.error('Error creating report:', error);
@@ -259,12 +269,18 @@ export function UploadSection() {
         description: error instanceof Error ? error.message : "Failed to create report. Please try again.",
         variant: "destructive",
       });
+
+      posthog.capture("upload_section_new_property_analysis_failed", {
+        button_name: "New Property Analysis",
+        error_message: error instanceof Error ? error.message : "Failed to create report. Please try again.",
+      });
     } finally {
       setIsAnalysing(false);
     }
   }, [
     isFormValid,
     user,
+    posthog,
     propertyUrl,
     uploadedFiles,
     scrapePropertyUrl,
