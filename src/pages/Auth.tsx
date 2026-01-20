@@ -153,11 +153,6 @@ const Auth = () => {
         }
         return;
       }
-
-      toast({
-        title: "Account Created",
-        description: "Please check your email to confirm your account.",
-      });
     } catch (error) {
       toast({
         title: "Error",
