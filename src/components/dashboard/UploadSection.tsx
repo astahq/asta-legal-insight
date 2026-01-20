@@ -166,8 +166,7 @@ export function UploadSection() {
         };
       }
       return null;
-    } catch (error) {
-      console.error('Error scraping:', error);
+    } catch {
       return null;
     } finally {
       setIsLoading(false);
@@ -263,7 +262,6 @@ export function UploadSection() {
 
       navigate(`/reports/${reportId}`);
     } catch (error) {
-      console.error('Error creating report:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to create report. Please try again.",

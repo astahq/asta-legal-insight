@@ -7,11 +7,6 @@ interface PropertyDetailsProps {
 }
 
 export function PropertyDetails({ details }: PropertyDetailsProps) {
-  const formatValue = (value: string | number | undefined | null, isUnknown = false) => {
-    if (value === undefined || value === null) return "—";
-    if (isUnknown && value === "Unknown") return "—";
-    return value;
-  };
 
   return (
     <Card>
@@ -20,13 +15,13 @@ export function PropertyDetails({ details }: PropertyDetailsProps) {
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-1">Guide Price</p>
             <p className="text-3xl font-bold text-foreground">
-              {formatValue(details.guidePrice, true)}
+              {details.guidePrice && details.guidePrice !== "Unknown" ? details.guidePrice : "—"}
             </p>
           </div>
           <div className="text-right">
             <p className="text-sm font-medium text-muted-foreground mb-1">Auction Date</p>
             <p className="text-xl font-semibold text-foreground">
-              {formatValue(details.auctionDate, true)}
+              {details.auctionDate && details.auctionDate !== "Unknown" ? details.auctionDate : "—"}
             </p>
             {details.auctionDateNote && (
               <p className="text-xs text-muted-foreground mt-0.5">{details.auctionDateNote}</p>
@@ -40,7 +35,7 @@ export function PropertyDetails({ details }: PropertyDetailsProps) {
           <DetailItem label="Address" value={details.address} />
           <DetailItem label="Property Type" value={details.propertyType} isUnknown />
           <DetailItem label="Bedrooms" value={details.bedrooms} />
-          <DetailItem label="Bathrooms" value={details.bathrooms} />
+          <DetailItem label="Bathrooms" value={details.bathrooms ?? 1} />
           <DetailItem label="Size" value={details.size} isUnknown />
           <DetailItem label="Catalog Number" value={details.catalogNumber} />
           <DetailItem label="Lot Type" value={details.lotType} />
@@ -75,7 +70,7 @@ function DetailItem({
   isUnknown?: boolean;
 }) {
   const displayValue =
-    value === undefined || value === null || (isUnknown && value === "Unknown")
+    value === undefined || value === null || value === "" || (isUnknown && value === "Unknown")
       ? "—"
       : value;
 

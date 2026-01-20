@@ -26,7 +26,7 @@ const ReportDetail = () => {
 
   const propertyAddress = isDemo
     ? "22 Carslake Road"
-    : getDisplayAddress(report?.property_address) || "Property";
+    : getDisplayAddress((report?.scraped_data as unknown as { extract: { address: string } })?.extract?.address || "Property");
 
   const fullPropertyAddress = isDemo
     ? "22 Carslake Road"
@@ -43,7 +43,7 @@ const ReportDetail = () => {
   };
 
   const rawAnalysis = isDemo ? demoReportAnalysis : report?.analysis_result || null;
-  const analysis: ReportAnalysis | null = rawAnalysis ? transformAnalysisResult(rawAnalysis) : null;
+  const analysis: ReportAnalysis | null = rawAnalysis ? transformAnalysisResult(rawAnalysis, report) : null;
 
   if (isLoading && !isDemo) {
     return (
@@ -82,7 +82,7 @@ const ReportDetail = () => {
           onWatchlist={onWatchlist ?? false}
           onToggleWatchlist={handleToggleWatchlist}
           onUpdateName={updateReportName.mutate}
-              reportId={id || "demo"}
+          reportId={id || "demo"}
           isDemo={isDemo}
         />
 

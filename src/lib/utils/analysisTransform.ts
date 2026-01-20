@@ -64,45 +64,58 @@ function transformPropertyDetails(raw: unknown): PropertyDetails {
     return {};
   }
 
-  const getString = (key: string, altKey?: string): string | undefined => {
-    const value = raw[key] || (altKey ? raw[altKey] : undefined);
-    return value ? String(value) : undefined;
+  const getValue = (value: unknown): string | undefined => {
+    if (value === null || value === undefined) return undefined;
+    const str = String(value);
+    return str === "null" ? undefined : str;
   };
 
-  const getNumber = (key: string, altKey?: string): number | undefined => {
-    const value = raw[key] || (altKey ? raw[altKey] : undefined);
+  const getNumber = (value: unknown, fallback?: number): number | undefined => {
+    if (value === null || value === undefined) return fallback;
     if (typeof value === "number") return value;
-    if (typeof value === "string") {
-      const parsed = parseInt(value, 10);
-      return isNaN(parsed) ? undefined : parsed;
-    }
-    return undefined;
+    const str = String(value);
+    if (str === "null") return fallback;
+    const parsed = parseInt(str, 10);
+    return isNaN(parsed) ? fallback : parsed;
   };
 
+  const lotType = getValue(raw.lot_type);
   return {
-    propertyType: getString("propertyType", "property_type"),
-    bedrooms: getNumber("bedrooms", "number_of_bedrooms"),
-    bathrooms: getNumber("bathrooms", "number_of_bathrooms"),
-    size: getString("size"),
-    guidePrice: getString("guidePrice", "guide_price"),
-    auctionDate: getString("auctionDate", "auction_date"),
-    auctionDateNote: getString("auctionDateNote", "auction_date_note"),
-    address: getString("address"),
-    catalogNumber: getString("catalogNumber", "catalog_number"),
-    description: getString("description"),
-    lotType: getString("lotType", "lot_type"),
-    epcRating: getString("epcRating", "epc_rating"),
-    councilTax: getString("councilTax", "council_tax"),
-    buyersCharge: getString("buyersCharge", "buyers_charge"),
-    administrationChargeBand: getString(
-      "administrationChargeBand",
-      "administration_charge_band"
-    ),
+    address: getValue(raw.address),
+    propertyType: lotType,
+    lotType: lotType,
+    bedrooms: getNumber(raw.number_of_bedrooms),
+    bathrooms: getNumber(raw.number_of_bathrooms, 1),
+    size: getValue(raw.size),
+    tenure: getValue(raw.tenure),
+    guidePrice: getValue(raw.guide_price),
+    auctionDate: getValue(raw.auction_date),
+    catalogNumber: getValue(raw.catalog_number),
+    description: getValue(raw.description),
+    epcRating: getValue(raw.epc_rating),
+    councilTax: getValue(raw.council_tax),
+    buyersCharge: getValue(raw.buyers_charge),
+    administrationChargeBand: getValue(raw.administration_charge_band),
   };
 }
 
+function getPropertyDetails(report: unknown): PropertyDetails {
+  if (!isRecord(report)) return {};
+
+  if (isRecord(report.scraped_data) && isRecord(report.scraped_data.extract)) {
+    return transformPropertyDetails(report.scraped_data.extract);
+  }
+
+  if (isRecord(report.analysis_result) && isRecord(report.analysis_result.propertyDetails)) {
+    return transformPropertyDetails(report.analysis_result.propertyDetails);
+  }
+
+  return {};
+}
+
 export function transformAnalysisResult(
-  raw: unknown
+  raw: unknown,
+  report?: unknown
 ): ReportAnalysis | null {
   if (!isRecord(raw)) return null;
 
@@ -127,7 +140,7 @@ export function transformAnalysisResult(
   const tenure = (raw.tenure as string) || "Unknown";
   const covenants = (raw.covenants as string) || "Unknown";
 
-  const propertyDetails = transformPropertyDetails(raw.propertyDetails);
+  const propertyDetails = report ? getPropertyDetails(report) : transformPropertyDetails(raw.propertyDetails);
 
   const titleObj = isRecord(raw.title) ? raw.title : {};
   return {

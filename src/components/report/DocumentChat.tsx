@@ -113,7 +113,6 @@ export function DocumentChat({ reportId, propertyAddress }: DocumentChatProps) {
         button_name: "Talk with Documents",
       });
     } catch (error) {
-      console.error("Chat error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to send message");
       // Remove the user message if there was an error
       setMessages((prev) => prev.filter((m) => m !== userMessage));

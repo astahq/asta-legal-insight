@@ -40,17 +40,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         .eq('id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
-      }
 
       setProfile({
         full_name: data?.full_name || user.user_metadata?.full_name || null,
         avatar_url: data?.avatar_url || null,
         email: data?.email || user.email || null,
       });
-    } catch (error) {
-      console.error('Error fetching profile:', error);
+    } catch {
+        console.error('Error fetching profile');
     } finally {
       setLoading(false);
     }
@@ -77,7 +74,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       setProfile((prev) => ({ ...prev, ...data }));
       return { error: null };
     } catch (error) {
-      console.error('Error updating profile:', error);
       return { error: error as Error };
     }
   };

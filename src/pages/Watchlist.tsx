@@ -65,9 +65,7 @@ const Watchlist = () => {
           schema: 'public',
           table: 'reports',
         },
-        (payload) => {
-          console.log('Realtime update:', payload);
-          // Invalidate queries to refresh data
+        () => {
           queryClient.invalidateQueries({ queryKey: ['watchlist'] });
           queryClient.invalidateQueries({ queryKey: ['reports'] });
         }

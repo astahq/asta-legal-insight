@@ -35,9 +35,8 @@ const Settings = () => {
       const { error } = await updateProfile({ full_name: fullName });
       if (error) throw error;
       toast.success("Profile updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update profile");
-      console.error(error);
     } finally {
       setIsSaving(false);
     }
@@ -70,9 +69,8 @@ const Settings = () => {
       if (updateError) throw updateError;
 
       toast.success("Avatar updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to upload avatar");
-      console.error(error);
     } finally {
       setIsUploadingAvatar(false);
     }

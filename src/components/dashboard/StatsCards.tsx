@@ -56,8 +56,8 @@ export function StatsCards() {
           documentsAnalysed,
           totalValue,
         });
-      } catch (error) {
-        console.error("Error fetching stats:", error);
+      } catch {
+        console.error('Error fetching stats');
       } finally {
         setLoading(false);
       }

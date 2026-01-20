@@ -24,6 +24,7 @@ export interface PropertyDetails {
   bedrooms?: number;
   bathrooms?: number;
   size?: string;
+  tenure?: string;
   guidePrice?: string;
   auctionDate?: string;
   auctionDateNote?: string;
