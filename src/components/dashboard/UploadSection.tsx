@@ -252,8 +252,9 @@ export function UploadSection() {
       });
 
       toast({
-        title: addToWatchlist ? "Report created and added to watchlist" : "Report created",
-        description: "Your analysis is now processing. You'll see results shortly.",
+        title: addToWatchlist ? "Report created and added to watchlist" : "Analysis started",
+        description: "Your analysis is processing (5-10 minutes). We'll email you when it's ready.",
+        duration: 6000,
       });
 
       posthog.capture("upload_section_new_property_analysis_created", {
