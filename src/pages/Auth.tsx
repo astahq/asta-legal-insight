@@ -58,7 +58,7 @@ const Auth = () => {
       if (error instanceof z.ZodError) {
         toast({
           title: "Validation Error",
-          description: error.errors[0].message,
+          description: error.issues[0]?.message || "Please check your inputs",
           variant: "destructive",
         });
         return;
@@ -113,7 +113,7 @@ const Auth = () => {
       if (error instanceof z.ZodError) {
         toast({
           title: "Validation Error",
-          description: error.errors[0].message,
+          description: error.issues[0]?.message || "Please check your inputs",
           variant: "destructive",
         });
         return;
@@ -153,6 +153,13 @@ const Auth = () => {
         }
         return;
       }
+
+      toast({
+        title: "Account created!",
+        description: "Welcome to Asta! Check your email to verify your account.",
+      });
+
+      navigate("/");
     } catch (error) {
       toast({
         title: "Error",
