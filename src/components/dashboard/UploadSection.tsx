@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo, useRef } from "react";
-import { Upload, Info, ChevronRight, Pencil, Loader2, Star } from "lucide-react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { Upload, Info, ChevronRight, Pencil, Loader2, Star, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { processLegalPack, uploadPdfsToStorage } from "@/lib/api/legalPackProcessor";
 import { usePostHog } from "posthog-js/react";
+import { z } from "zod";
 
 interface ScrapedProperty {
   title?: string;
@@ -24,9 +25,63 @@ interface ScrapedProperty {
 
 const FILE_ACCEPT_TYPES = ".pdf,.docx,.txt";
 const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const PROPERTY_URL_PLACEHOLDER = "https://online.auctionhouse.co.uk/lot/details/...";
 const DEFAULT_PROPERTY_NAME = "Property Analysis";
 const DESCRIPTION_MAX_LENGTH = 100;
+
+const validFileExtensions = ['.pdf', '.docx', '.txt'];
+
+const fileSchema = z.file()
+  .max(MAX_FILE_SIZE_BYTES, `File size must be under ${MAX_FILE_SIZE_MB}MB`)
+  .refine(
+    (file) => {
+      const fileName = file.name.toLowerCase();
+      return validFileExtensions.some(ext => fileName.endsWith(ext));
+    },
+    {
+      message: `File must be PDF, DOCX, or TXT`
+    }
+  );
+
+const uploadFormSchema = z.object({
+  files: z.array(fileSchema).min(1, "At least one PDF, DOCX, or TXT file is required"),
+  propertyUrl: z.url("Please enter a valid property URL").min(1, "Property URL is required"),
+});
+
+type UploadFormData = z.infer<typeof uploadFormSchema>;
+
+interface FileItemProps {
+  file: File;
+  index: number;
+  onRemove: (index: number) => void;
+  isLast: boolean;
+  onClearError: () => void;
+}
+
+const FileItem = ({ file, index, onRemove, isLast, onClearError }: FileItemProps) => {
+  const handleRemoveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRemove(index);
+    if (isLast) {
+      onClearError();
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2">
+      <span className="text-sm text-foreground truncate">{file.name}</span>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleRemoveClick}
+        className="text-muted-foreground hover:text-destructive"
+      >
+        Remove
+      </Button>
+    </div>
+  );
+};
 
 function extractPropertyAddress(
   scrapedData: ScrapedProperty | null,
@@ -61,96 +116,188 @@ export function UploadSection() {
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [addToWatchlist, setAddToWatchlist] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{
+    files?: string;
+    propertyUrl?: string;
+  }>({});
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
-  }, []);
+  };
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
+  const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-  }, []);
+  };
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const validateFiles = (files: File[]): { valid: File[]; errors: string[] } => {
+    const valid: File[] = [];
+    const errors: string[] = [];
+
+    files.forEach((file) => {
+      try {
+        fileSchema.parse(file);
+        valid.push(file);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          errors.push(`${file.name}: ${error.issues[0]?.message || 'Invalid file'}`);
+        }
+      }
+    });
+
+    return { valid, errors };
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const files = Array.from(e.dataTransfer.files);
-    setUploadedFiles((prev) => [...prev, ...files]);
-  }, []);
+    const { valid, errors } = validateFiles(files);
+    
+    if (valid.length > 0) {
+      setUploadedFiles((prev) => [...prev, ...valid]);
+      setValidationErrors((prev) => ({ ...prev, files: undefined }));
+    }
+    
+    if (errors.length > 0) {
+      toast({
+        title: "Invalid files",
+        description: errors.join(", "),
+        variant: "destructive",
+      });
+    }
+  };
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setUploadedFiles((prev) => [...prev, ...files]);
-  }, []);
+    const { valid, errors } = validateFiles(files);
+    
+    if (valid.length > 0) {
+      setUploadedFiles((prev) => [...prev, ...valid]);
+      setValidationErrors((prev) => ({ ...prev, files: undefined }));
+    }
+    
+    if (errors.length > 0) {
+      toast({
+        title: "Invalid files",
+        description: errors.join(", "),
+        variant: "destructive",
+      });
+    }
+    
+    if (e.target) {
+      e.target.value = '';
+    }
+  };
 
   const removeFile = useCallback((index: number) => {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+    setUploadedFiles((prev) => {
+      const newFiles = prev.filter((_, i) => i !== index);
+      if (newFiles.length === 0) {
+        setValidationErrors((prev) => ({ ...prev, files: undefined }));
+      }
+      return newFiles;
+    });
   }, []);
 
-  const handleUploadZoneClick = useCallback(() => {
+  const handleUploadZoneClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const urlValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPropertyUrl(value);
+    
+    if (urlValidationTimeoutRef.current) {
+      clearTimeout(urlValidationTimeoutRef.current);
+    }
+
+    if (!value.trim()) {
+      setValidationErrors((prev) => ({ ...prev, propertyUrl: undefined }));
+      return;
+    }
+
+    urlValidationTimeoutRef.current = setTimeout(() => {
+      try {
+        z.url().parse(value);
+        setValidationErrors((prev) => ({ ...prev, propertyUrl: undefined }));
+      } catch {
+        setValidationErrors((prev) => ({ 
+          ...prev, 
+          propertyUrl: "Please enter a valid URL" 
+        }));
+      }
+    }, 300);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (urlValidationTimeoutRef.current) {
+        clearTimeout(urlValidationTimeoutRef.current);
+      }
+    };
   }, []);
 
-  const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setPropertyUrl(e.target.value);
-  }, []);
-
-  const handleUrlBlur = useCallback(() => {
+  const handleUrlBlur = () => {
     setIsEditingUrl(false);
-  }, []);
+  };
 
-  const handleUrlKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleUrlKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       setIsEditingUrl(false);
     }
-  }, []);
+  };
 
-  const handleUrlDisplayClick = useCallback(() => {
+  const handleUrlDisplayClick = () => {
     if (!isAnalysing) {
       setIsEditingUrl(true);
     }
-  }, [isAnalysing]);
+  };
 
-  const handleWatchlistChange = useCallback((checked: boolean) => {
+  const handleWatchlistChange = (checked: boolean) => {
     setAddToWatchlist(checked);
-  }, []);
+  };
 
   const isFormValid = useMemo(() => {
-    return uploadedFiles.length > 0 || propertyUrl.trim().length > 0;
-  }, [uploadedFiles.length, propertyUrl]);
-
-  const isButtonDisabled = useMemo(() => {
-    return isLoading || isAnalysing || !isFormValid;
-  }, [isLoading, isAnalysing, isFormValid]);
-
-  const buttonContent = useMemo(() => {
-    if (isAnalysing) {
-      return (
-        <>
-          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-          Creating report...
-        </>
-      );
+    if (uploadedFiles.length === 0 || !propertyUrl.trim()) {
+      return false;
     }
-    if (isLoading) {
-      return (
-        <>
-          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-          Extracting property details...
-        </>
-      );
+    
+    try {
+      uploadFormSchema.parse({
+        files: uploadedFiles,
+        propertyUrl: propertyUrl.trim(),
+      });
+      return true;
+    } catch {
+      return false;
     }
-    return (
-      <>
-        Analysis Documents
-        <ChevronRight className="w-5 h-5 ml-2" />
-      </>
-    );
-  }, [isAnalysing, isLoading]);
+  }, [uploadedFiles, propertyUrl]);
+
+  const isButtonDisabled = isLoading || isAnalysing || !isFormValid;
+
+  const buttonContent = isAnalysing ? (
+    <>
+      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+      Creating report...
+    </>
+  ) : isLoading ? (
+    <>
+      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+      Extracting property details...
+    </>
+  ) : (
+    <>
+      Analysis Documents
+      <ChevronRight className="w-5 h-5 ml-2" />
+    </>
+  );
 
 
-  const scrapePropertyUrl = useCallback(async (url: string): Promise<ScrapedProperty | null> => {
+  const scrapePropertyUrl = async (url: string): Promise<ScrapedProperty | null> => {
     setIsLoading(true);
     try {
       const response = await firecrawlApi.scrape(url, {
@@ -171,9 +318,9 @@ export function UploadSection() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
-  const createReport = useCallback(async (
+  const createReport = async (
     reportId: string,
     propertyAddress: string,
     scrapedData: ScrapedProperty | null,
@@ -198,19 +345,41 @@ export function UploadSection() {
     if (insertError) {
       throw new Error(`Failed to create report: ${insertError.message}`);
     }
-  }, [propertyUrl, addToWatchlist, uploadedFiles.length, user]);
+  };
 
-  const handleAnalyse = useCallback(async () => {
+  const handleAnalyse = async () => {
     posthog.capture("upload_section_new_property_analysis_button_clicked", {
       button_name: "New Property Analysis",
     });
 
-    if (!isFormValid) {
-      toast({
-        title: "No content to analyse",
-        description: "Please upload files or enter a property URL.",
-        variant: "destructive",
-      });
+    const formData: UploadFormData = {
+      files: uploadedFiles,
+      propertyUrl: propertyUrl.trim(),
+    };
+
+    try {
+      uploadFormSchema.parse(formData);
+      setValidationErrors({});
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: { files?: string; propertyUrl?: string } = {};
+        
+        error.issues.forEach((err) => {
+          if (err.path[0] === 'files') {
+            errors.files = err.message;
+          } else if (err.path[0] === 'propertyUrl') {
+            errors.propertyUrl = err.message;
+          }
+        });
+        
+        setValidationErrors(errors);
+        
+        toast({
+          title: "Validation Error",
+          description: error.issues[0]?.message || "Please check your inputs",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
@@ -232,9 +401,6 @@ export function UploadSection() {
         scrapedDataResult = await scrapePropertyUrl(propertyUrl);
       }
 
-      if (uploadedFiles.length === 0 && !scrapedDataResult) {
-        throw new Error('Please upload files or provide a valid property URL');
-      }
 
       const propertyAddress = extractPropertyAddress(scrapedDataResult, uploadedFiles);
       const reportId = crypto.randomUUID();
@@ -276,24 +442,13 @@ export function UploadSection() {
     } finally {
       setIsAnalysing(false);
     }
-  }, [
-    isFormValid,
-    user,
-    posthog,
-    propertyUrl,
-    uploadedFiles,
-    scrapePropertyUrl,
-    createReport,
-    addToWatchlist,
-    navigate,
-    toast,
-  ]);
+  };
 
   return (
     <div className="space-y-6">
       <div className="bg-card border border-border rounded-lg p-6">
         <h3 className="text-lg font-semibold text-foreground mb-2">
-          Upload Your Legal Pack
+          Upload Your Legal Pack <span className="text-destructive">*</span>
         </h3>
         <p className="text-sm text-muted-foreground mb-4 max-w-full">
           Our AI has been trained on thousands of legal packs and property auction documents. It can identify issues that even experienced lawyers might miss, and it does it in minutes instead of hours. The reports are comprehensive, easy to understand, and highlight all potential risks.
@@ -308,7 +463,8 @@ export function UploadSection() {
         <div
           className={cn(
             "upload-zone min-h-[200px]",
-            isDragging && "border-primary bg-primary/5"
+            isDragging && "border-primary bg-primary/5",
+            validationErrors.files && "border-destructive"
           )}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -341,26 +497,22 @@ export function UploadSection() {
         {uploadedFiles.length > 0 && (
           <div className="mt-4 space-y-2">
             <p className="text-sm font-medium text-foreground">Uploaded files:</p>
-            {uploadedFiles.map((file, index) => {
-              const handleRemoveClick = (e: React.MouseEvent) => {
-                e.stopPropagation();
-                removeFile(index);
-              };
-
-              return (
-                <div key={`${file.name}-${index}`} className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2">
-                  <span className="text-sm text-foreground truncate">{file.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleRemoveClick}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    Remove
-                  </Button>
-                </div>
-              );
-            })}
+            {uploadedFiles.map((file, index) => (
+              <FileItem
+                key={`${file.name}-${index}`}
+                file={file}
+                index={index}
+                onRemove={removeFile}
+                isLast={uploadedFiles.length === 1}
+                onClearError={() => setValidationErrors((prev) => ({ ...prev, files: undefined }))}
+              />
+            ))}
+          </div>
+        )}
+        {validationErrors.files && (
+          <div className="mt-2 flex items-center gap-2 text-sm text-destructive">
+            <AlertCircle className="w-4 h-4" />
+            <span>{validationErrors.files}</span>
           </div>
         )}
       </div>
@@ -369,13 +521,15 @@ export function UploadSection() {
       <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-8">
           <div className="flex-shrink-0">
-            <h4 className="font-medium text-foreground">Property URL (recommended)</h4>
+            <h4 className="font-medium text-foreground">
+              Property URL <span className="text-destructive">*</span>
+            </h4>
             <p className="text-sm text-muted-foreground mt-1">
               Adding a property URL allows us to<br className="hidden md:block" />
               extract additional property information.
             </p>
           </div>
-          <div className="flex-1 min-w-0 flex items-center gap-2">
+          <div className="flex-1 min-w-0 space-y-2">
             {isEditingUrl ? (
               <Input
                 type="url"
@@ -385,12 +539,18 @@ export function UploadSection() {
                 onBlur={handleUrlBlur}
                 onKeyDown={handleUrlKeyDown}
                 autoFocus
-                className="flex-1 min-w-0"
+                className={cn(
+                  "flex-1 min-w-0",
+                  validationErrors.propertyUrl && "border-destructive"
+                )}
                 disabled={isLoading || isAnalysing}
               />
             ) : (
               <div 
-                className="flex-1 min-w-0 flex items-center justify-between bg-background border border-border rounded-md px-3 py-2 cursor-text"
+                className={cn(
+                  "flex-1 min-w-0 flex items-center justify-between bg-background border rounded-md px-3 py-2 cursor-text",
+                  validationErrors.propertyUrl ? "border-destructive" : "border-border"
+                )}
                 onClick={handleUrlDisplayClick}
               >
                 <span className={cn(
@@ -404,6 +564,12 @@ export function UploadSection() {
                 ) : (
                   <Pencil className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-2" />
                 )}
+              </div>
+            )}
+            {validationErrors.propertyUrl && (
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <AlertCircle className="w-4 h-4" />
+                <span>{validationErrors.propertyUrl}</span>
               </div>
             )}
           </div>
