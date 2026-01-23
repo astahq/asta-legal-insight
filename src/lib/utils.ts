@@ -15,3 +15,10 @@ export function getDisplayAddress(
   if (firstLine.length <= maxLength) return firstLine;
   return address.slice(0, maxLength) + "...";
 }
+
+export function extractPropertySubtitle(address: string | null | undefined): string {
+  if (!address) return "";
+  const parts = address.split(",").map(part => part.trim());
+  if (parts.length < 2) return "";
+  return parts.slice(1).join(", ");
+}

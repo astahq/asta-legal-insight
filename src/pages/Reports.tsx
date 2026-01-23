@@ -8,6 +8,7 @@ import { cn, getDisplayAddress } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { demoReport } from "@/lib/demoReportData";
 
 interface Report {
   id: string;
@@ -17,15 +18,6 @@ interface Report {
   on_watchlist: boolean;
   created_at: string;
 }
-
-const demoReport: Report = {
-  id: 'demo',
-  property_address: '22 Carslake Road, Wandsworth, London, SW15 3DP',
-  property_url: null,
-  status: 'completed',
-  on_watchlist: false,
-  created_at: new Date().toISOString(),
-};
 
 function StatusBadge({ status }: { status: string }) {
   const config = {
