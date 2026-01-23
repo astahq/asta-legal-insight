@@ -42,6 +42,7 @@ const ReportDetail = () => {
 
   const rawAnalysis = currentReport?.analysis_result || null;
   const analysis: ReportAnalysis | null = rawAnalysis ? transformAnalysisResult(rawAnalysis, currentReport) : null;
+  const isAnalysisComplete = isDemo || (analysis && currentReport?.status === "completed");
 
   if (isLoading && !isDemo) {
     return (
@@ -82,6 +83,7 @@ const ReportDetail = () => {
           onUpdateName={updateReportName.mutate}
           reportId={id || "demo"}
           isDemo={isDemo}
+          isAnalysisComplete={isAnalysisComplete}
         />
 
         {analysis?.propertyDetails && (

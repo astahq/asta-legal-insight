@@ -14,6 +14,7 @@ interface PropertyHeaderProps {
   onUpdateName?: (name: string) => void;
   reportId: string;
   isDemo: boolean;
+  isAnalysisComplete: boolean;
 }
 
 export function PropertyHeader({
@@ -25,6 +26,7 @@ export function PropertyHeader({
   onUpdateName,
   reportId,
   isDemo,
+  isAnalysisComplete,
 }: PropertyHeaderProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
@@ -135,16 +137,18 @@ export function PropertyHeader({
           <Button
             variant="outline"
             onClick={onToggleWatchlist}
+            disabled={!isAnalysisComplete}
             className={cn(
               "border-primary text-primary hover:bg-primary hover:text-primary-foreground",
-              onWatchlist && "bg-primary text-primary-foreground"
+              onWatchlist && "bg-primary text-primary-foreground",
+              !isAnalysisComplete && "opacity-50 cursor-not-allowed"
             )}
           >
             <Star className={cn("w-4 h-4 mr-2", onWatchlist && "fill-current")} />
             {onWatchlist ? "On Watchlist" : "Add to Watchlist"}
           </Button>
         )}
-        <DocumentChat reportId={reportId} propertyAddress={propertyAddress} isDemo={isDemo} />
+        <DocumentChat reportId={reportId} propertyAddress={propertyAddress} isDemo={isDemo} isAnalysisComplete={isAnalysisComplete} />
       </div>
     </div>
   );
