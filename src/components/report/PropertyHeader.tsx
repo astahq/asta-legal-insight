@@ -119,18 +119,32 @@ export function PropertyHeader({
         )}
       </div>
       <div className="flex items-center gap-3 print:hidden flex-shrink-0">
-        <Button
-          variant="outline"
-          onClick={onToggleWatchlist}
-          className={cn(
-            "border-primary text-primary hover:bg-primary hover:text-primary-foreground",
-            onWatchlist && "bg-primary text-primary-foreground"
-          )}
-        >
-          <Star className={cn("w-4 h-4 mr-2", onWatchlist && "fill-current")} />
-          {onWatchlist ? "On Watchlist" : "Add to Watchlist"}
-        </Button>
-        <DocumentChat reportId={reportId} propertyAddress={propertyAddress} />
+        {isDemo ? (
+          <span
+            className={cn(
+              "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
+              "border border-primary text-primary bg-background",
+              "px-4 py-2 h-10",
+              onWatchlist && "bg-primary text-primary-foreground"
+            )}
+          >
+            <Star className={cn("w-4 h-4 mr-2", onWatchlist && "fill-current")} />
+            {onWatchlist ? "On Watchlist" : "Add to Watchlist"}
+          </span>
+        ) : (
+          <Button
+            variant="outline"
+            onClick={onToggleWatchlist}
+            className={cn(
+              "border-primary text-primary hover:bg-primary hover:text-primary-foreground",
+              onWatchlist && "bg-primary text-primary-foreground"
+            )}
+          >
+            <Star className={cn("w-4 h-4 mr-2", onWatchlist && "fill-current")} />
+            {onWatchlist ? "On Watchlist" : "Add to Watchlist"}
+          </Button>
+        )}
+        <DocumentChat reportId={reportId} propertyAddress={propertyAddress} isDemo={isDemo} />
       </div>
     </div>
   );
