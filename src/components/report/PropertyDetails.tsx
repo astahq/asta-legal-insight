@@ -1,6 +1,7 @@
 import { PropertyDetails as PropertyDetailsType } from "@/lib/demoReportData";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import ReactMarkdown from "react-markdown";
 
 interface PropertyDetailsProps {
   details: PropertyDetailsType;
@@ -51,7 +52,30 @@ export function PropertyDetails({ details }: PropertyDetailsProps) {
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                 Description
               </p>
-              <p className="text-sm text-foreground leading-relaxed">{details.description}</p>
+              <ReactMarkdown
+                components={{
+                  p: ({ ...props }) => (
+                    <p className="text-sm text-foreground leading-relaxed mb-2 last:mb-0" {...props} />
+                  ),
+                  strong: ({ ...props }) => (
+                    <strong className="font-semibold" {...props} />
+                  ),
+                  em: ({ ...props }) => (
+                    <em className="italic" {...props} />
+                  ),
+                  ul: ({ ...props }) => (
+                    <ul className="list-disc list-inside my-2 space-y-1" {...props} />
+                  ),
+                  ol: ({ ...props }) => (
+                    <ol className="list-decimal list-inside my-2 space-y-1" {...props} />
+                  ),
+                  li: ({ ...props }) => (
+                    <li className="text-sm text-foreground leading-relaxed" {...props} />
+                  ),
+                }}
+              >
+                {details.description}
+              </ReactMarkdown>
             </div>
           </>
         )}
