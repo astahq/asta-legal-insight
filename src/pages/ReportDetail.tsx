@@ -2,8 +2,8 @@ import { useParams, Link } from "react-router-dom";
 import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { demoReportAnalysis, ReportAnalysis } from "@/lib/demoReportData";
-import { getDisplayAddress } from "@/lib/utils";
+import { demoReport, ReportAnalysis } from "@/lib/demoReportData";
+import { getDisplayAddress, extractPropertySubtitle } from "@/lib/utils";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { transformAnalysisResult } from "@/lib/utils/analysisTransform";
@@ -20,20 +20,18 @@ const ReportDetail = () => {
   const [demoWatchlist, setDemoWatchlist] = useState(false);
 
   const { data: report, isLoading, error } = useReport(id, isDemo);
-  const toggleWatchlist = useToggleWatchlist(id, isDemo, isDemo ? demoWatchlist : report?.on_watchlist ?? false);
+  const currentReport = isDemo ? demoReport : report;
+  const toggleWatchlist = useToggleWatchlist(id, isDemo, isDemo ? demoWatchlist : currentReport?.on_watchlist ?? false);
   const updateReportName = useUpdateReportName(id, isDemo);
-  const retryAnalysis = useRetryAnalysis(id, isDemo, user?.id, report?.property_url);
+  const retryAnalysis = useRetryAnalysis(id, isDemo, user?.id, currentReport?.property_url || undefined);
 
-  const propertyAddress = isDemo
-    ? "22 Carslake Road"
-    : getDisplayAddress((report?.scraped_data as unknown as { extract: { address: string } })?.extract?.address || "Property");
-
-  const fullPropertyAddress = isDemo
-    ? "22 Carslake Road"
-    : report?.property_address || "Property";
-
-  const propertySubtitle = isDemo ? "Wandsworth, London, SW15 3DP" : "";
-  const onWatchlist = isDemo ? demoWatchlist : report?.on_watchlist;
+  const extractAddress = (currentReport?.scraped_data as unknown as { extract: { address: string } })?.extract?.address;
+  const propertyAddress = getDisplayAddress(extractAddress || "Property");
+  const fullPropertyAddress = currentReport?.property_address || "Property";
+  const propertySubtitle = isDemo 
+    ? (currentReport as typeof demoReport)?.property_subtitle ?? ""
+    : extractPropertySubtitle(extractAddress);
+  const onWatchlist = isDemo ? demoWatchlist : currentReport?.on_watchlist;
 
   const handleToggleWatchlist = () => {
     if (isDemo) {
@@ -42,8 +40,8 @@ const ReportDetail = () => {
     toggleWatchlist.mutate();
   };
 
-  const rawAnalysis = isDemo ? demoReportAnalysis : report?.analysis_result || null;
-  const analysis: ReportAnalysis | null = rawAnalysis ? transformAnalysisResult(rawAnalysis, report) : null;
+  const rawAnalysis = currentReport?.analysis_result || null;
+  const analysis: ReportAnalysis | null = rawAnalysis ? transformAnalysisResult(rawAnalysis, currentReport) : null;
 
   if (isLoading && !isDemo) {
     return (
@@ -55,7 +53,7 @@ const ReportDetail = () => {
     );
   }
 
-  if (!isDemo && (error || !report)) {
+  if (!isDemo && (error || !currentReport)) {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
@@ -95,9 +93,9 @@ const ReportDetail = () => {
           <span className="font-medium">Not legal advice - your smarter due-diligence co-pilot</span>
         </div>
 
-        {!isDemo && (!analysis || report?.status !== "completed") ? (
+        {!isDemo && (!analysis || currentReport?.status !== "completed") ? (
           <AnalysisStatus
-            status={report?.status === "failed" ? "failed" : "processing"}
+            status={currentReport?.status === "failed" ? "failed" : "processing"}
             onRetry={() => retryAnalysis.mutate()}
             isRetrying={retryAnalysis.isPending}
             requiresAuth={!user}
