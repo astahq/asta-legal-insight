@@ -62,7 +62,9 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
-    "zod": "^4.3.5"
+    "zod": "^4.3.5",
+    "ai": "^4.0.0",
+    "react-markdown": "^9.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",

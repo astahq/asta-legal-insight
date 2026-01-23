@@ -13,7 +13,18 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, reportId } = await req.json();
+    const body = await req.json();
+    console.log("Received request body:", JSON.stringify(body));
+    
+    const { messages, reportId } = body;
+    
+    if (!messages || !reportId) {
+      console.error("Missing required fields:", { messages: !!messages, reportId: !!reportId });
+      return new Response(JSON.stringify({ error: "messages and reportId are required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     if (!OPENAI_API_KEY) {
@@ -147,12 +158,83 @@ Instructions:
 
     console.log("Streaming response started");
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    const transformState = {
+      buffer: '',
+    };
+    
+    const transformStream = new TransformStream({
+      transform(chunk, controller) {
+        const decoder = new TextDecoder();
+        const encoder = new TextEncoder();
+        const chunkText = decoder.decode(chunk, { stream: true });
+        transformState.buffer += chunkText;
+        
+        const lines = transformState.buffer.split('\n');
+        transformState.buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (line.trim() === '') continue;
+          if (line.startsWith(':')) continue;
+          if (!line.startsWith('data: ')) continue;
+          
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') {
+            continue;
+          }
+          
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices?.[0]?.delta?.content;
+            
+            if (content !== undefined && content !== null && content !== "") {
+              controller.enqueue(encoder.encode(String(content)));
+            }
+          } catch (e) {
+            console.error("Error parsing SSE data:", e, "Data:", data);
+          }
+        }
+      },
+      flush(controller) {
+        const encoder = new TextEncoder();
+        if (transformState.buffer.trim()) {
+          const line = transformState.buffer.trim();
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            if (data !== '[DONE]') {
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content !== undefined && content !== null && content !== "") {
+                  controller.enqueue(encoder.encode(String(content)));
+                }
+              } catch (e) {
+                console.error("Error parsing final buffer:", e);
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const transformedStream = response.body?.pipeThrough(transformStream);
+
+    return new Response(transformedStream, {
+      headers: { 
+        ...corsHeaders, 
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive"
+      },
     });
   } catch (error) {
     console.error("Document chat error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("Error stack:", errorStack);
+    return new Response(JSON.stringify({ 
+      error: errorMessage,
+      stack: errorStack 
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
