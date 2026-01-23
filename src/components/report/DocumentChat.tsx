@@ -14,6 +14,7 @@ import ReactMarkdown from "react-markdown";
 interface DocumentChatProps {
   reportId: string;
   propertyAddress: string;
+  isDemo?: boolean;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/document-chat`;
@@ -252,7 +253,7 @@ const ChatContent = memo(function ChatContent({
   );
 });
 
-export function DocumentChat({ reportId, propertyAddress }: DocumentChatProps) {
+export function DocumentChat({ reportId, propertyAddress, isDemo = false }: DocumentChatProps) {
   const posthog = usePostHog();
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -346,6 +347,14 @@ export function DocumentChat({ reportId, propertyAddress }: DocumentChatProps) {
 
 
   if (!isOpen) {
+    if (isDemo) {
+      return (
+        <span className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground px-4 py-2 h-10">
+          <MessageCircle className="w-4 h-4 mr-2" />
+          Talk with Documents
+        </span>
+      );
+    }
     return (
       <Button
         onClick={handleOpen}
