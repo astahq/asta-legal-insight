@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { usePostHog } from "posthog-js/react";
 import { useChat } from "@ai-sdk/react";
+import { TextStreamChatTransport } from "ai";
 import ReactMarkdown from "react-markdown";
 
 interface DocumentChatProps {
@@ -260,31 +261,33 @@ export function DocumentChat({ reportId, propertyAddress }: DocumentChatProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fullscreenInputRef = useRef<HTMLInputElement>(null);
 
-  const { messages, append, status } = useChat({
+  const { messages, sendMessage, status } = useChat({
     id: `document-chat-${reportId}`,
-    api: CHAT_URL,
-    streamProtocol: "text",
-    headers: {
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      "Content-Type": "application/json",
-    },
-    experimental_prepareRequestBody: ({ messages }) => {
-      const formattedMessages = messages.map((msg) => {
-        const content = typeof msg.content === "string" 
-          ? msg.content 
-          : msg.parts?.find((part) => part.type === "text")?.text || "";
+    transport: new TextStreamChatTransport({
+      api: CHAT_URL,
+      headers: {
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      prepareSendMessagesRequest: ({ messages }) => {
+        const formattedMessages = messages.map((msg) => {
+          const textParts = msg.parts?.filter((part) => part.type === "text") || [];
+          const content = textParts.map((part) => part.text).join("");
+          return {
+            role: msg.role,
+            content,
+          };
+        });
         return {
-          role: msg.role,
-          content,
+          body: {
+            messages: formattedMessages,
+            reportId,
+          },
         };
-      });
-      return {
-        messages: formattedMessages,
-        reportId,
-      };
-    },
+      },
+    }),
     onError: (error) => {
-      toast.error(error.message || "Failed to send message");
+      toast.error(error.message || "Failed to send message, please try again.");
     },
     onFinish: () => {
       posthog.capture("talk_with_documents_message_sent", {
@@ -311,9 +314,9 @@ export function DocumentChat({ reportId, propertyAddress }: DocumentChatProps) {
 
   const handleSend = useCallback(() => {
     if (!input.trim() || status !== "ready") return;
-    append({ role: "user", content: input.trim() });
+    sendMessage({ text: input.trim() });
     setInput("");
-  }, [input, status, append]);
+  }, [input, status, sendMessage]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
