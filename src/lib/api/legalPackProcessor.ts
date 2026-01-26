@@ -21,6 +21,14 @@ export interface ProcessResponse {
   error?: string;
 }
 
+function sanitizeFileName(fileName: string): string {
+  return fileName
+    .replace(/[^\w\s.-]/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export async function uploadPdfsToStorage(
   files: File[],
   userId: string
@@ -29,7 +37,8 @@ export async function uploadPdfsToStorage(
   
   for (const file of files) {
     const timestamp = Date.now();
-    const fileName = `${timestamp}-${file.name}`;
+    const sanitizedName = sanitizeFileName(file.name);
+    const fileName = `${timestamp}-${sanitizedName}`;
     const filePath = `${userId}/${fileName}`;
     
     const { error } = await supabase.storage
