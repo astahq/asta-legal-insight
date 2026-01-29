@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, memo } from "react";
 import { Upload, Info, ChevronRight, Pencil, Loader2, Star, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -52,25 +52,20 @@ const uploadFormSchema = z.object({
 type UploadFormData = z.infer<typeof uploadFormSchema>;
 
 interface FileItemProps {
-  file: File;
+  fileName: string;
   index: number;
   onRemove: (index: number) => void;
-  isLast: boolean;
-  onClearError: () => void;
 }
 
-const FileItem = ({ file, index, onRemove, isLast, onClearError }: FileItemProps) => {
-  const handleRemoveClick = (e: React.MouseEvent) => {
+const FileItem = memo(({ fileName, index, onRemove }: FileItemProps) => {
+  const handleRemoveClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     onRemove(index);
-    if (isLast) {
-      onClearError();
-    }
-  };
+  }, [onRemove, index]);
 
   return (
     <div className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2">
-      <span className="text-sm text-foreground truncate">{file.name}</span>
+      <span className="text-sm text-foreground truncate">{fileName}</span>
       <Button
         variant="ghost"
         size="sm"
@@ -81,7 +76,7 @@ const FileItem = ({ file, index, onRemove, isLast, onClearError }: FileItemProps
       </Button>
     </div>
   );
-};
+});
 
 function extractPropertyAddress(
   scrapedData: ScrapedProperty | null,
@@ -112,8 +107,7 @@ export function UploadSection() {
   const [isDragging, setIsDragging] = useState(false);
   const [propertyUrl, setPropertyUrl] = useState("");
   const [isEditingUrl, setIsEditingUrl] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAnalysing, setIsAnalysing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [addToWatchlist, setAddToWatchlist] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
@@ -121,93 +115,90 @@ export function UploadSection() {
     propertyUrl?: string;
   }>({});
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
-  };
+  }, []);
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-  };
+  }, []);
 
-  const validateFiles = (files: File[]): { valid: File[]; errors: string[] } => {
+  const validateFiles = useCallback((files: File[]): { valid: File[]; errors: string[] } => {
     const valid: File[] = [];
     const errors: string[] = [];
 
-    files.forEach((file) => {
-      try {
-        fileSchema.parse(file);
-        valid.push(file);
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          errors.push(`${file.name}: ${error.issues[0]?.message || 'Invalid file'}`);
-        }
+    for (const file of files) {
+      const fileName = file.name.toLowerCase();
+      const isValidExtension = validFileExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (!isValidExtension) {
+        errors.push(`${file.name}: File must be PDF, DOCX, or TXT`);
+        continue;
       }
-    });
+      
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        errors.push(`${file.name}: File size must be under ${MAX_FILE_SIZE_MB}MB`);
+        continue;
+      }
+      
+      valid.push(file);
+    }
 
     return { valid, errors };
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const processValidFiles = useCallback((files: File[]) => {
+    const { valid, errors } = validateFiles(files);
+    
+    if (valid.length > 0) {
+      setUploadedFiles((prev) => [...prev, ...valid]);
+      setValidationErrors((prev) => ({ ...prev, files: undefined }));
+    }
+    
+    if (errors.length > 0) {
+      toast({
+        title: "Invalid files",
+        description: errors.join(", "),
+        variant: "destructive",
+      });
+    }
+  }, [validateFiles, toast]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const files = Array.from(e.dataTransfer.files);
-    const { valid, errors } = validateFiles(files);
-    
-    if (valid.length > 0) {
-      setUploadedFiles((prev) => [...prev, ...valid]);
-      setValidationErrors((prev) => ({ ...prev, files: undefined }));
-    }
-    
-    if (errors.length > 0) {
-      toast({
-        title: "Invalid files",
-        description: errors.join(", "),
-        variant: "destructive",
-      });
-    }
-  };
+    processValidFiles(files);
+  }, [processValidFiles]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const { valid, errors } = validateFiles(files);
-    
-    if (valid.length > 0) {
-      setUploadedFiles((prev) => [...prev, ...valid]);
-      setValidationErrors((prev) => ({ ...prev, files: undefined }));
-    }
-    
-    if (errors.length > 0) {
-      toast({
-        title: "Invalid files",
-        description: errors.join(", "),
-        variant: "destructive",
-      });
-    }
+    processValidFiles(files);
     
     if (e.target) {
       e.target.value = '';
     }
-  };
+  }, [processValidFiles]);
 
   const removeFile = useCallback((index: number) => {
     setUploadedFiles((prev) => {
       const newFiles = prev.filter((_, i) => i !== index);
       if (newFiles.length === 0) {
-        setValidationErrors((prev) => ({ ...prev, files: undefined }));
+        setValidationErrors((prevErrors) => ({ ...prevErrors, files: undefined }));
       }
       return newFiles;
     });
   }, []);
 
-  const handleUploadZoneClick = () => {
+  const handleUploadZoneClick = useCallback(() => {
     fileInputRef.current?.click();
-  };
+  }, []);
 
   const urlValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPropertyUrl(value);
     
@@ -222,7 +213,7 @@ export function UploadSection() {
 
     urlValidationTimeoutRef.current = setTimeout(() => {
       try {
-        z.url().parse(value);
+        new URL(value);
         setValidationErrors((prev) => ({ ...prev, propertyUrl: undefined }));
       } catch {
         setValidationErrors((prev) => ({ 
@@ -231,7 +222,7 @@ export function UploadSection() {
         }));
       }
     }, 300);
-  };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -241,25 +232,25 @@ export function UploadSection() {
     };
   }, []);
 
-  const handleUrlBlur = () => {
+  const handleUrlBlur = useCallback(() => {
     setIsEditingUrl(false);
-  };
+  }, []);
 
-  const handleUrlKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleUrlKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       setIsEditingUrl(false);
     }
-  };
+  }, []);
 
-  const handleUrlDisplayClick = () => {
-    if (!isAnalysing) {
+  const handleUrlDisplayClick = useCallback(() => {
+    if (!isSubmitting) {
       setIsEditingUrl(true);
     }
-  };
+  }, [isSubmitting]);
 
-  const handleWatchlistChange = (checked: boolean) => {
+  const handleWatchlistChange = useCallback((checked: boolean) => {
     setAddToWatchlist(checked);
-  };
+  }, []);
 
   const isFormValid = useMemo(() => {
     if (uploadedFiles.length === 0 || !propertyUrl.trim()) {
@@ -267,38 +258,30 @@ export function UploadSection() {
     }
     
     try {
-      uploadFormSchema.parse({
-        files: uploadedFiles,
-        propertyUrl: propertyUrl.trim(),
-      });
+      new URL(propertyUrl.trim());
       return true;
     } catch {
       return false;
     }
-  }, [uploadedFiles, propertyUrl]);
+  }, [uploadedFiles.length, propertyUrl]);
 
-  const isButtonDisabled = isLoading || isAnalysing || !isFormValid;
+  const isButtonDisabled = isSubmitting || !isFormValid;
 
-  const buttonContent = isAnalysing ? (
-    <>
-      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-      Creating report...
-    </>
-  ) : isLoading ? (
-    <>
-      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-      Extracting property details...
-    </>
-  ) : (
-    <>
-      Analysis Documents
-      <ChevronRight className="w-5 h-5 ml-2" />
-    </>
-  );
+  const buttonContent = useMemo(() => 
+    isSubmitting ? (
+      <>
+        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+        Creating report...
+      </>
+    ) : (
+      <>
+        Analysis Documents
+        <ChevronRight className="w-5 h-5 ml-2" />
+      </>
+    ), [isSubmitting]);
 
 
   const scrapePropertyUrl = async (url: string): Promise<ScrapedProperty | null> => {
-    setIsLoading(true);
     try {
       const response = await firecrawlApi.scrape(url, {
         formats: ['markdown'],
@@ -315,35 +298,44 @@ export function UploadSection() {
       return null;
     } catch {
       return null;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const createReport = async (
+  const processInBackground = async (
     reportId: string,
-    propertyAddress: string,
-    scrapedData: ScrapedProperty | null,
-    filePaths: string[]
+    userId: string,
+    files: File[],
+    url: string
   ) => {
-    const insertData = {
-      id: reportId,
-      property_address: propertyAddress,
-      property_url: propertyUrl || null,
-      status: 'processing' as const,
-      scraped_data: scrapedData as unknown as import('@/integrations/supabase/types').Json | null,
-      on_watchlist: addToWatchlist,
-      user_id: user!.id,
-      documents_count: uploadedFiles.length,
-      file_paths: filePaths,
-    };
+    try {
+      const [filePaths, scrapedData] = await Promise.all([
+        files.length > 0 ? uploadPdfsToStorage(files, userId) : Promise.resolve([]),
+        url.trim() ? scrapePropertyUrl(url).catch(() => null) : Promise.resolve(null),
+      ]);
 
-    const { error: insertError } = await supabase
-      .from('reports')
-      .insert(insertData as import('@/integrations/supabase/types').Database['public']['Tables']['reports']['Insert'] & { file_paths: string[] });
+      if (filePaths.length > 0 || scrapedData) {
+        const updateData: Record<string, unknown> = {};
+        if (filePaths.length > 0) {
+          updateData.file_paths = filePaths;
+        }
+        if (scrapedData) {
+          updateData.scraped_data = scrapedData;
+        }
+        await supabase.from('reports').update(updateData).eq('id', reportId);
+      }
 
-    if (insertError) {
-      throw new Error(`Failed to create report: ${insertError.message}`);
+      await processLegalPack({
+        reportId,
+        userId,
+        url: url || undefined,
+      });
+    } catch (error) {
+      await supabase.from('reports').update({ status: 'failed' }).eq('id', reportId);
+      
+      posthog.capture("upload_section_background_processing_failed", {
+        report_id: reportId,
+        error_message: error instanceof Error ? error.message : "Background processing failed",
+      });
     }
   };
 
@@ -392,29 +384,34 @@ export function UploadSection() {
       return;
     }
 
-    setIsAnalysing(true);
+    setIsSubmitting(true);
 
     try {
-      let scrapedDataResult: ScrapedProperty | null = null;
+      const reportId = crypto.randomUUID();
+      const propertyAddress = extractPropertyAddress(null, uploadedFiles);
 
-      if (propertyUrl.trim()) {
-        scrapedDataResult = await scrapePropertyUrl(propertyUrl);
+      const insertData = {
+        id: reportId,
+        property_address: propertyAddress,
+        property_url: propertyUrl || null,
+        status: 'processing' as const,
+        scraped_data: null,
+        on_watchlist: addToWatchlist,
+        user_id: user.id,
+        documents_count: uploadedFiles.length,
+        file_paths: [],
+      };
+
+      const { error: insertError } = await supabase
+        .from('reports')
+        .insert(insertData as import('@/integrations/supabase/types').Database['public']['Tables']['reports']['Insert'] & { file_paths: string[] });
+
+      if (insertError) {
+        throw new Error(`Failed to create report: ${insertError.message}`);
       }
 
-
-      const propertyAddress = extractPropertyAddress(scrapedDataResult, uploadedFiles);
-      const reportId = crypto.randomUUID();
-
-      const filePaths = uploadedFiles.length > 0 
-        ? await uploadPdfsToStorage(uploadedFiles, user.id)
-        : [];
-
-      await createReport(reportId, propertyAddress, scrapedDataResult, filePaths);
-
-      await processLegalPack({
-        reportId,
-        userId: user.id,
-        url: propertyUrl || undefined,
+      posthog.capture("upload_section_new_property_analysis_created", {
+        button_name: "New Property Analysis",
       });
 
       toast({
@@ -423,11 +420,9 @@ export function UploadSection() {
         duration: 6000,
       });
 
-      posthog.capture("upload_section_new_property_analysis_created", {
-        button_name: "New Property Analysis",
-      });
-
       navigate(`/reports/${reportId}`);
+
+      processInBackground(reportId, user.id, uploadedFiles, propertyUrl);
     } catch (error) {
       toast({
         title: "Error",
@@ -440,7 +435,7 @@ export function UploadSection() {
         error_message: error instanceof Error ? error.message : "Failed to create report. Please try again.",
       });
     } finally {
-      setIsAnalysing(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -499,12 +494,10 @@ export function UploadSection() {
             <p className="text-sm font-medium text-foreground">Uploaded files:</p>
             {uploadedFiles.map((file, index) => (
               <FileItem
-                key={`${file.name}-${index}`}
-                file={file}
+                key={`${file.name}-${file.size}-${index}`}
+                fileName={file.name}
                 index={index}
                 onRemove={removeFile}
-                isLast={uploadedFiles.length === 1}
-                onClearError={() => setValidationErrors((prev) => ({ ...prev, files: undefined }))}
               />
             ))}
           </div>
@@ -543,7 +536,7 @@ export function UploadSection() {
                   "flex-1 min-w-0",
                   validationErrors.propertyUrl && "border-destructive"
                 )}
-                disabled={isLoading || isAnalysing}
+                disabled={isSubmitting}
               />
             ) : (
               <div 
@@ -559,7 +552,7 @@ export function UploadSection() {
                 )}>
                   {propertyUrl || PROPERTY_URL_PLACEHOLDER}
                 </span>
-                {isLoading || isAnalysing ? (
+                {isSubmitting ? (
                   <Loader2 className="w-4 h-4 text-primary animate-spin flex-shrink-0 ml-2" />
                 ) : (
                   <Pencil className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-2" />

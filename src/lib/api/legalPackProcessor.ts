@@ -33,18 +33,18 @@ export async function uploadPdfsToStorage(
   files: File[],
   userId: string
 ): Promise<string[]> {
-  const filePaths: string[] = [];
-  
-  for (const file of files) {
-    const timestamp = Date.now();
+  const uploadPromises = files.map(async (file, index) => {
+    const timestamp = Date.now() + index;
     const sanitizedName = sanitizeFileName(file.name);
     const fileName = `${timestamp}-${sanitizedName}`;
     const filePath = `${userId}/${fileName}`;
     
+    const contentType = file.type || 'application/octet-stream';
+    
     const { error } = await supabase.storage
       .from('legal-packs')
       .upload(filePath, file, {
-        contentType: 'application/pdf',
+        contentType,
         upsert: false,
       });
     
@@ -52,10 +52,10 @@ export async function uploadPdfsToStorage(
       throw new Error(`Failed to upload ${file.name}: ${error.message}`);
     }
     
-    filePaths.push(filePath);
-  }
+    return filePath;
+  });
   
-  return filePaths;
+  return Promise.all(uploadPromises);
 }
 
 
@@ -70,6 +70,7 @@ export async function processLegalPack(
 
   const response = await fetch(`${BACKEND_URL}/process`, {
     method: 'POST',
+    credentials: 'omit',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${session.access_token}`,
