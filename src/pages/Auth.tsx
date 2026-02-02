@@ -156,7 +156,7 @@ const Auth = () => {
 
       toast({
         title: "Account created!",
-        description: "Welcome to Asta! Check your email to verify your account.",
+        description: "Welcome to Asta!",
       });
 
       navigate("/");

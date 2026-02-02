@@ -14,6 +14,268 @@ export type Database = {
   }
   public: {
     Tables: {
+      customers: {
+        Row: {
+          id: string
+          stripe_customer_id: string | null
+          trial_started_at: string | null
+          trial_ends_at: string | null
+          trial_usage_count: number
+          trial_usage_limit: number
+          current_plan_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          stripe_customer_id?: string | null
+          trial_started_at?: string | null
+          trial_ends_at?: string | null
+          trial_usage_count?: number
+          trial_usage_limit?: number
+          current_plan_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          stripe_customer_id?: string | null
+          trial_started_at?: string | null
+          trial_ends_at?: string | null
+          trial_usage_count?: number
+          trial_usage_limit?: number
+          current_plan_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          id: string
+          user_id: string
+          stripe_payment_intent_id: string | null
+          stripe_checkout_session_id: string | null
+          amount: number
+          currency: string
+          status: 'pending' | 'succeeded' | 'failed' | 'refunded'
+          payment_type: 'one_time' | 'subscription'
+          report_id: string | null
+          metadata: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          stripe_payment_intent_id?: string | null
+          stripe_checkout_session_id?: string | null
+          amount: number
+          currency?: string
+          status: 'pending' | 'succeeded' | 'failed' | 'refunded'
+          payment_type: 'one_time' | 'subscription'
+          report_id?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          stripe_payment_intent_id?: string | null
+          stripe_checkout_session_id?: string | null
+          amount?: number
+          currency?: string
+          status?: 'pending' | 'succeeded' | 'failed' | 'refunded'
+          payment_type?: 'one_time' | 'subscription'
+          report_id?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      payment_logs: {
+        Row: {
+          id: string
+          event_type: string
+          stripe_event_id: string | null
+          payload: Json | null
+          processed_at: string
+          error: string | null
+        }
+        Insert: {
+          id?: string
+          event_type: string
+          stripe_event_id?: string | null
+          payload?: Json | null
+          processed_at?: string
+          error?: string | null
+        }
+        Update: {
+          id?: string
+          event_type?: string
+          stripe_event_id?: string | null
+          payload?: Json | null
+          processed_at?: string
+          error?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          stripe_subscription_id: string
+          stripe_customer_id: string
+          stripe_price_id: string
+          plan_id: string | null
+          status: 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid' | 'paused'
+          usage_count: number
+          usage_limit: number
+          current_period_start: string
+          current_period_end: string
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          stripe_subscription_id: string
+          stripe_customer_id: string
+          stripe_price_id: string
+          plan_id?: string | null
+          status: 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid' | 'paused'
+          usage_count?: number
+          usage_limit: number
+          current_period_start: string
+          current_period_end: string
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          stripe_subscription_id?: string
+          stripe_customer_id?: string
+          stripe_price_id?: string
+          plan_id?: string | null
+          status?: 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid' | 'paused'
+          usage_count?: number
+          usage_limit?: number
+          current_period_start?: string
+          current_period_end?: string
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      plans: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          price_monthly: number
+          currency: string
+          usage_limit: number
+          trial_days: number
+          features: Json
+          is_active: boolean
+          display_order: number
+          created_at: string
+        }
+        Insert: {
+          id: string
+          name: string
+          description?: string | null
+          price_monthly: number
+          currency?: string
+          usage_limit: number
+          trial_days?: number
+          features?: Json
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          price_monthly?: number
+          currency?: string
+          usage_limit?: number
+          trial_days?: number
+          features?: Json
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      usage_records: {
+        Row: {
+          id: string
+          user_id: string
+          subscription_id: string | null
+          report_id: string | null
+          billing_period_start: string
+          billing_period_end: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          subscription_id?: string | null
+          report_id?: string | null
+          billing_period_start: string
+          billing_period_end: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          subscription_id?: string | null
+          report_id?: string | null
+          billing_period_start?: string
+          billing_period_end?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_records_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usage_records_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       auction_calendar: {
         Row: {
           auction_date: string
@@ -179,6 +441,8 @@ export type Database = {
           status: string
           updated_at: string
           user_id: string | null
+          payment_status: 'unpaid' | 'paid' | 'refunded'
+          payment_id: string | null
         }
         Insert: {
           analysis_result?: Json | null
@@ -193,6 +457,8 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string | null
+          payment_status?: 'unpaid' | 'paid' | 'refunded'
+          payment_id?: string | null
         }
         Update: {
           analysis_result?: Json | null
@@ -207,15 +473,66 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string | null
+          payment_status?: 'unpaid' | 'paid' | 'refunded'
+          payment_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reports_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_user_access: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: {
+          has_access: boolean
+          is_trial: boolean
+          plan_id: string
+          usage_count: number
+          usage_limit: number
+          usage_remaining: number
+          period_ends_at: string | null
+        }[]
+      }
+      consume_trial_usage: {
+        Args: {
+          p_user_id: string
+          p_report_id: string
+        }
+        Returns: boolean
+      }
+      consume_usage: {
+        Args: {
+          p_user_id: string
+          p_report_id: string
+        }
+        Returns: boolean
+      }
+      reset_subscription_usage: {
+        Args: {
+          p_stripe_subscription_id: string
+          p_period_start: string
+          p_period_end: string
+        }
+        Returns: undefined
+      }
+      initialize_user_trial: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

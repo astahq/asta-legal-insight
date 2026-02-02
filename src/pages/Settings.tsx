@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -194,17 +193,6 @@ const Settings = () => {
                 <p className="text-xs text-muted-foreground">Receive updates about your reports via email</p>
               </div>
               <Switch defaultChecked />
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div>
-                  <p className="text-sm font-medium text-foreground">Auction reminders</p>
-                  <p className="text-xs text-muted-foreground">Get notified before auctions on your watchlist</p>
-                </div>
-                <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
-              </div>
-              <Switch disabled />
             </div>
             <Separator />
             <div className="flex items-center justify-between">

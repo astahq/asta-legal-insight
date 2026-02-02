@@ -26,8 +26,8 @@ const ReportDetail = () => {
   const retryAnalysis = useRetryAnalysis(id, isDemo, user?.id, currentReport?.property_url || undefined);
 
   const extractAddress = (currentReport?.scraped_data as unknown as { extract: { address: string } })?.extract?.address;
-  const propertyAddress = getDisplayAddress(extractAddress || "Property");
-  const fullPropertyAddress = currentReport?.property_address || "Property";
+  const propertyAddress = getDisplayAddress(extractAddress || "Document Analysis");
+  const fullPropertyAddress = currentReport?.property_address || "Document Analysis";
   const propertySubtitle = isDemo 
     ? (currentReport as typeof demoReport)?.property_subtitle ?? ""
     : extractPropertySubtitle(extractAddress);
