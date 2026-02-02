@@ -68,12 +68,11 @@ export function StatsCards() {
 
   const statsData = [
     { label: "Properties analysed", value: stats.propertiesAnalysed.toString() },
-    { label: "Document analysed", value: stats.documentsAnalysed.toString() },
-    { label: "Total Value of Properties", value: formatCurrency(stats.totalValue) },
+    { label: "Documents analysed", value: stats.documentsAnalysed.toString() },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {statsData.map((stat) => (
         <StatCard key={stat.label} label={stat.label} value={stat.value} loading={loading} />
       ))}

@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect, memo } from "react";
-import { Upload, Info, ChevronRight, Pencil, Loader2, Star, AlertCircle } from "lucide-react";
+import { Upload, Info, ChevronRight, Pencil, Loader2, Star, AlertCircle, FileText, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,9 +10,11 @@ import { firecrawlApi } from "@/lib/api/firecrawl";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBilling } from "@/contexts/BillingContext";
 import { processLegalPack, uploadPdfsToStorage } from "@/lib/api/legalPackProcessor";
 import { usePostHog } from "posthog-js/react";
 import { z } from "zod";
+import { PaymentRequiredModal } from "@/components/billing/PaymentRequiredModal";
 
 interface ScrapedProperty {
   title?: string;
@@ -101,6 +104,19 @@ export function UploadSection() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const {
+    canProcessReport,
+    isTrialActive,
+    isTrialExpired,
+    isPaidPlan,
+    isAtLimit,
+    hasUsageLimits,
+    trial,
+    usage,
+    access,
+    refreshBillingStatus,
+    initializeTrial,
+  } = useBilling();
   const posthog = usePostHog();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -114,6 +130,8 @@ export function UploadSection() {
     files?: string;
     propertyUrl?: string;
   }>({});
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingReportId, setPendingReportId] = useState<string | null>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -384,6 +402,35 @@ export function UploadSection() {
       return;
     }
 
+    if (!access) {
+      try {
+        await initializeTrial();
+        await refreshBillingStatus();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to initialize trial. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    if (!canProcessReport || isAtLimit) {
+      setShowPaymentModal(true);
+      
+      posthog.capture("upload_section_payment_required", {
+        is_trial: isTrialActive,
+        is_trial_expired: isTrialExpired,
+        is_paid_plan: isPaidPlan,
+        is_at_limit: isAtLimit,
+        trial_usage_remaining: trial?.usageRemaining ?? 0,
+        usage_remaining: usage?.remaining ?? 0,
+        plan_id: access?.planId ?? 'none',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -400,6 +447,7 @@ export function UploadSection() {
         user_id: user.id,
         documents_count: uploadedFiles.length,
         file_paths: [],
+        payment_status: 'unpaid' as const,
       };
 
       const { error: insertError } = await supabase
@@ -422,7 +470,16 @@ export function UploadSection() {
 
       navigate(`/reports/${reportId}`);
 
-      processInBackground(reportId, user.id, uploadedFiles, propertyUrl);
+      // Process in background and refresh billing when usage is consumed
+      processInBackground(reportId, user.id, uploadedFiles, propertyUrl)
+        .then(() => {
+          // Refresh billing status after processing starts (usage consumed)
+          refreshBillingStatus();
+        })
+        .catch(() => {
+          // Still refresh on error to get accurate state
+          refreshBillingStatus();
+        });
     } catch (error) {
       toast({
         title: "Error",
@@ -441,6 +498,114 @@ export function UploadSection() {
 
   return (
     <div className="space-y-6">
+      {(isPaidPlan || isTrialActive) && hasUsageLimits && usage && (() => {
+        const radius = 28;
+        const circumference = 2 * Math.PI * radius;
+        const remainingPercent = 100 - usage.percentUsed;
+        const strokeDashoffset = circumference - (remainingPercent / 100) * circumference;
+        const progressColor = isAtLimit 
+          ? "stroke-destructive" 
+          : usage.percentUsed >= 80 
+            ? "stroke-warning"
+            : "stroke-primary";
+        const accentColor = isAtLimit 
+          ? "text-destructive" 
+          : usage.percentUsed >= 80 
+            ? "text-warning"
+            : "text-primary";
+        
+        return (
+          <div className="bg-card rounded-xl border border-border shadow-sm px-5 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-5">
+                <div className="relative flex-shrink-0">
+                  <svg width="72" height="72" viewBox="0 0 72 72" className="-rotate-90">
+                    <circle
+                      cx="36"
+                      cy="36"
+                      r={radius}
+                      fill="none"
+                      strokeWidth="7"
+                      className="stroke-muted"
+                    />
+                    <circle
+                      cx="36"
+                      cy="36"
+                      r={radius}
+                      fill="none"
+                      strokeWidth="7"
+                      strokeLinecap="round"
+                      className={cn(progressColor, "transition-all duration-700 ease-out")}
+                      strokeDasharray={circumference}
+                      strokeDashoffset={strokeDashoffset}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className={cn("text-xl font-bold", accentColor)}>
+                      {usage.remaining}
+                    </span>
+                    <span className="text-[9px] text-muted-foreground">left</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    {isTrialActive ? 'Free Trial' : 'Monthly Usage'}
+                    {isTrialActive && trial && (
+                      <span className={cn(
+                        "text-[10px] font-medium px-1.5 py-0.5 rounded",
+                        trial.daysRemaining <= 3
+                          ? "bg-warning/10 text-warning"
+                          : "bg-primary/10 text-primary"
+                      )}>
+                        {trial.daysRemaining}d
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {usage.used} of {usage.limit} reports used
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6">
+                <div className="hidden sm:flex items-center gap-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-foreground">{usage.used}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Used</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-foreground">{usage.limit}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Limit</div>
+                  </div>
+                </div>
+
+                {isAtLimit ? (
+                  <Button asChild size="sm">
+                    <Link to="/pricing">
+                      Upgrade
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Link>
+                  </Button>
+                ) : usage.percentUsed >= 80 ? (
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/pricing">View Plans</Link>
+                  </Button>
+                ) : isTrialActive && trial && trial.daysRemaining <= 7 ? (
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/pricing">View Plans</Link>
+                  </Button>
+                ) : (
+                  <Button asChild size="sm" variant="ghost" className="text-muted-foreground">
+                    <Link to="/pricing">View Plans</Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+      
       <div className="bg-card border border-border rounded-lg p-6">
         <h3 className="text-lg font-semibold text-foreground mb-2">
           Upload Your Legal Pack <span className="text-destructive">*</span>
@@ -592,6 +757,12 @@ export function UploadSection() {
       >
         {buttonContent}
       </Button>
+
+      <PaymentRequiredModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        reportId={pendingReportId || undefined}
+      />
     </div>
   );
 }
