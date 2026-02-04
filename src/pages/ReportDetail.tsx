@@ -12,14 +12,17 @@ import { PropertyDetails } from "@/components/report/PropertyDetails";
 import { AnalysisStatus } from "@/components/report/AnalysisStatus";
 import { AnalysisContent } from "@/components/report/AnalysisContent";
 import { useReport, useToggleWatchlist, useUpdateReportName, useRetryAnalysis } from "@/hooks/useReport";
+import { useSearchParams } from "react-router-dom";
 
 const ReportDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const isDemo = id === "demo";
   const [demoWatchlist, setDemoWatchlist] = useState(false);
+  const shareToken = searchParams.get('token');
 
-  const { data: report, isLoading, error } = useReport(id, isDemo);
+  const { data: report, isLoading, error } = useReport(id, isDemo, shareToken);
   const currentReport = isDemo ? demoReport : report;
   const toggleWatchlist = useToggleWatchlist(id, isDemo, isDemo ? demoWatchlist : currentReport?.on_watchlist ?? false);
   const updateReportName = useUpdateReportName(id, isDemo);
@@ -84,6 +87,8 @@ const ReportDetail = () => {
           reportId={id || "demo"}
           isDemo={isDemo}
           isAnalysisComplete={isAnalysisComplete}
+          isPublic={!isDemo && report && 'is_public' in report ? Boolean((report as Record<string, unknown>).is_public) : false}
+          shareToken={!isDemo && report && 'share_token' in report ? (report as Record<string, unknown>).share_token as string | null : null}
         />
 
         {analysis?.propertyDetails && (

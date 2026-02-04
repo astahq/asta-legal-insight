@@ -14,9 +14,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Mail, Lock, User } from "lucide-react";
+import { Loader2, Mail, Lock, User, Gift } from "lucide-react";
 import astaLogo from "@/assets/asta-logo.png";
 import { z } from "zod";
+import { Badge } from "@/components/ui/badge";
 
 const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z
@@ -219,6 +220,31 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-6 p-4 rounded-lg bg-muted/30 border border-border">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                  <Gift className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" className="border-primary/20 text-primary bg-background">
+                      Free Trial
+                    </Badge>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <span>14 days</span>
+                      <span>•</span>
+                      <span>3 analyses</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-foreground leading-relaxed">
+                    Start your free trial and get instant access to AI-powered legal pack analysis.
+                  </p>
+                  <p className="text-sm font-semibold text-primary">
+                    No credit card required
+                  </p>
+                </div>
+              </div>
+            </div>
             {/* Google Login */}
             <Button
               variant="outline"
@@ -366,9 +392,12 @@ const Auth = () => {
                         Creating account...
                       </>
                     ) : (
-                      "Create Account"
+                      "Start Free Trial"
                     )}
                   </Button>
+                  <p className="text-xs text-center text-muted-foreground">
+                    No credit card required • Cancel anytime
+                  </p>
                 </form>
               </TabsContent>
             </Tabs>

@@ -37,36 +37,70 @@ serve(async (req) => {
 
     console.log(`Document chat request for report: ${reportId}`);
 
-    // Fetch report and its documents from database
-    const { data: report, error: reportError } = await supabase
-      .from('reports')
-      .select('property_address, scraped_data')
-      .eq('id', reportId)
-      .single();
+    let report: { property_address: string; scraped_data: any } | null = null;
+    let documents: Array<{ file_name: string; extracted_text: string }> = [];
+    let sections: Array<{ section_key: string; content: string }> = [];
 
-    if (reportError) {
-      console.error('Error fetching report:', reportError);
-      throw new Error('Report not found');
-    }
+    if (reportId === 'demo') {
+      report = {
+        property_address: '1 Official Copy - Transfer - LT356710',
+        scraped_data: {
+          extract: {
+            address: '123 Sample Street, Example Town, Demo County, AB1 2CD',
+            description: 'A two bedroom ground floor flat, situated in Example Town, Demo County.',
+            tenure: 'Leasehold',
+            guide_price: '£160,000',
+            lot_type: 'Ground Floor Flat',
+            number_of_bedrooms: 2,
+            number_of_bathrooms: 1
+          }
+        }
+      };
+      documents = [
+        { file_name: '1770141315901-1-Official-Copy-Transfer-LT356710.pdf', extracted_text: 'Official copy of transfer document for demo property. Title number LT356710. Transfer document shows property transfer details and legal obligations. Property is being sold with Limited Title Guarantee. Buyer assumes certain risks regarding title and cannot raise requisitions on matters that would be revealed by searches or inspection.' },
+        { file_name: '1770141315903-Auction-Special-Conditions.docx_588155_1.pdf', extracted_text: 'Auction special conditions outlining terms of sale, completion requirements, and buyer obligations. Standard auction terms apply with specific conditions for this property. Completion must occur within 5 working days of notice to complete being served. Buyer must pay sellers legal costs and search costs on completion.' },
+        { file_name: '1770141315910-Official-Copy-Register-LT356710.pdf', extracted_text: 'Official copy of register for Title Number LT356710. Register includes details of land and estate, proprietorship, and charges affecting the land. Property held under leasehold tenure. Title register shows restriction: No disposition can be registered without written consent from charge holder. Property is subject to rights and covenants from multiple historic conveyances.' },
+        { file_name: '1770141315914-Water-Drainage-Search.pdf', extracted_text: 'Property connected to mains water supply. No water mains, resource mains, or discharge pipes within property boundaries. Property not at risk of receiving low water pressure or flow. No public sewer, disposal main, lateral drain, or pumping station within property boundaries. No risk of internal flooding due to overloaded public sewers identified.' }
+      ];
+      sections = [
+        { section_key: 'title', content: 'The title of the property is registered and generally in good order, with one outstanding charge requiring discharge on completion. Property sold with Limited Title Guarantee.' },
+        { section_key: 'tenure', content: 'Leasehold' },
+        { section_key: 'covenants', content: 'Restrictive covenants apply to the property. The property must not be used for commercial purposes without consent from the original developer. External alterations and extensions require prior approval.' }
+      ];
+    } else {
+      const { data: reportData, error: reportError } = await supabase
+        .from('reports')
+        .select('property_address, scraped_data')
+        .eq('id', reportId)
+        .single();
 
-    // Fetch documents for this report
-    const { data: documents, error: docsError } = await supabase
-      .from('documents')
-      .select('file_name, extracted_text')
-      .eq('report_id', reportId);
+      if (reportError) {
+        console.error('Error fetching report:', reportError);
+        throw new Error('Report not found');
+      }
+      report = reportData;
 
-    if (docsError) {
-      console.error('Error fetching documents:', docsError);
-    }
+      const { data: docsData, error: docsError } = await supabase
+        .from('documents')
+        .select('file_name, extracted_text')
+        .eq('report_id', reportId);
 
-    // Fetch report sections
-    const { data: sections, error: sectionsError } = await supabase
-      .from('report_sections')
-      .select('section_key, content')
-      .eq('report_id', reportId);
+      if (docsError) {
+        console.error('Error fetching documents:', docsError);
+      } else {
+        documents = docsData || [];
+      }
 
-    if (sectionsError) {
-      console.error('Error fetching sections:', sectionsError);
+      const { data: sectionsData, error: sectionsError } = await supabase
+        .from('report_sections')
+        .select('section_key, content')
+        .eq('report_id', reportId);
+
+      if (sectionsError) {
+        console.error('Error fetching sections:', sectionsError);
+      } else {
+        sections = sectionsData || [];
+      }
     }
 
     // Build document context from actual database records
