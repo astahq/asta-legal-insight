@@ -118,23 +118,33 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
 }
 
 @layer components {
   .stat-card {
-    @apply bg-card border border-border rounded-lg p-6 transition-shadow hover:shadow-md;
+    @apply bg-card border border-border rounded-lg p-6 shadow-elevation-1 transition-all duration-200 ease-out;
+    @apply hover:shadow-elevation-2 hover:border-border/90;
   }
 
   .nav-item {
-    @apply flex items-center gap-3 px-4 py-2.5 text-muted-foreground rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground;
+    @apply flex items-center gap-3 px-4 py-2.5 text-muted-foreground rounded-lg transition-all duration-150 ease-out;
+    @apply hover:bg-accent hover:text-accent-foreground;
+    @apply active:scale-[0.995] active:bg-accent/90;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 
   .nav-item-active {
-    @apply bg-accent text-foreground font-medium;
+    @apply bg-accent text-foreground font-medium shadow-elevation-1;
   }
 
   .upload-zone {
-    @apply border-2 border-dashed border-border rounded-lg p-8 text-center transition-colors hover:border-primary/50 hover:bg-primary/5 cursor-pointer;
+    @apply border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer transition-all duration-200 ease-out;
+    @apply hover:border-primary/50 hover:bg-primary/5 hover:shadow-elevation-1;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 
   .status-badge {

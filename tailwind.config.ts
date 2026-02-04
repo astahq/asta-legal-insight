@@ -97,6 +97,18 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
       },
+      boxShadow: {
+        "elevation-1": "0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)",
+        "elevation-2": "0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04)",
+        "elevation-3": "0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.04)",
+        "elevation-1-hover": "0 2px 4px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04)",
+        "primary-glow": "0 4px 14px -2px rgba(249, 115, 22, 0.4), 0 2px 8px -2px rgba(249, 115, 22, 0.25)",
+        "primary-glow-hover": "0 8px 24px -4px rgba(249, 115, 22, 0.45), 0 4px 10px -2px rgba(249, 115, 22, 0.3)",
+      },
+      transitionDuration: {
+        "150": "150ms",
+        "200": "200ms",
+      },
     },
   },
   plugins: [tailwindcssAnimate],
