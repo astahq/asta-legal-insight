@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, memo } from "react";
 import { createPortal } from "react-dom";
 import { MessageCircle, Send, X, Loader2, Bot, User, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ButtonGroupText } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ interface DocumentChatProps {
   propertyAddress: string;
   isDemo?: boolean;
   isAnalysisComplete?: boolean;
+  buttonClassName?: string;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/document-chat`;
@@ -254,7 +256,7 @@ const ChatContent = memo(function ChatContent({
   );
 });
 
-export function DocumentChat({ reportId, propertyAddress, isDemo = false, isAnalysisComplete = true }: DocumentChatProps) {
+export function DocumentChat({ reportId, propertyAddress, isDemo = false, isAnalysisComplete = true, buttonClassName }: DocumentChatProps) {
   const posthog = usePostHog();
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -351,22 +353,35 @@ export function DocumentChat({ reportId, propertyAddress, isDemo = false, isAnal
     const isDisabled = !isDemo && !isAnalysisComplete;
     if (isDemo) {
       return (
-        <span className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground px-4 py-2 h-10">
-          <MessageCircle className="w-4 h-4 mr-2" />
-          Talk with Documents
-        </span>
+        <ButtonGroupText
+          asChild
+          className={cn(
+            buttonClassName ? "!rounded-r-none border-r-0 hover:!rounded-r-none focus-visible:!rounded-r-none" : "rounded-lg",
+            "px-4 h-10 transition-colors duration-150 hover:bg-neutral-200",
+            buttonClassName
+          )}
+        >
+          <MessageCircle className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+          <span className="text-sm">Talk with Documents</span>
+        </ButtonGroupText>
       );
     }
     return (
       <Button
+        variant="secondary"
         onClick={handleOpen}
         disabled={isDisabled}
+        size="default"
         className={cn(
-          "bg-primary hover:bg-primary/90 text-primary-foreground",
-          isDisabled && "opacity-50 cursor-not-allowed"
+          "[&_svg]:size-5 transition-colors duration-150",
+          buttonClassName
+            ? "!rounded-r-none border-r-0 hover:!rounded-r-none focus-visible:!rounded-r-none active:!rounded-r-none hover:bg-neutral-200"
+            : "rounded-full",
+          isDisabled && "opacity-50 cursor-not-allowed",
+          buttonClassName
         )}
       >
-        <MessageCircle className="w-4 h-4 mr-2" />
+        <MessageCircle className="w-4 h-4 shrink-0" strokeWidth={1.5} />
         Talk with Documents
       </Button>
     );

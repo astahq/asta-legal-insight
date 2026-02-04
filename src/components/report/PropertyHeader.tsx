@@ -1,9 +1,14 @@
-import { useState, useCallback, useMemo } from "react";
-import { Star, Pencil, Check, X } from "lucide-react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { Star, Pencil, Check, X, Share2, Link2, Copy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { ButtonGroup, ButtonGroupSeparator, ButtonGroupText } from "@/components/ui/button-group";
 import { DocumentChat } from "./DocumentChat";
+import { useToggleShare } from "@/hooks/useReport";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface PropertyHeaderProps {
   propertyAddress: string;
@@ -15,6 +20,8 @@ interface PropertyHeaderProps {
   reportId: string;
   isDemo: boolean;
   isAnalysisComplete: boolean;
+  isPublic?: boolean;
+  shareToken?: string | null;
 }
 
 export function PropertyHeader({
@@ -27,9 +34,22 @@ export function PropertyHeader({
   reportId,
   isDemo,
   isAnalysisComplete,
+  isPublic = false,
+  shareToken = null,
 }: PropertyHeaderProps) {
+  const { user } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
+  const [showShareField, setShowShareField] = useState(false);
+  const toggleShare = useToggleShare(reportId, isDemo, isPublic);
+
+  useEffect(() => {
+    if (isPublic && shareToken) {
+      setShowShareField(true);
+    } else {
+      setShowShareField(false);
+    }
+  }, [isPublic, shareToken]);
 
   const handleSaveName = useCallback(() => {
     const trimmedName = editedName.trim();
@@ -68,6 +88,33 @@ export function PropertyHeader({
   );
 
   const canEdit = !isDemo && onUpdateName;
+  const canShare = !isDemo && user && isAnalysisComplete;
+
+  const shareUrl = useMemo(() => {
+    if (isPublic && shareToken) {
+      return `${window.location.origin}/reports/${reportId}?token=${shareToken}`;
+    }
+    return null;
+  }, [isPublic, shareToken, reportId]);
+
+  const handleShare = useCallback(() => {
+    if (isPublic && shareToken) {
+      setShowShareField(true);
+    } else {
+      toggleShare.mutate();
+    }
+  }, [isPublic, shareToken, toggleShare]);
+
+  const handleCopyLink = useCallback(() => {
+    if (shareUrl) {
+      navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied to clipboard");
+    }
+  }, [shareUrl]);
+
+  const handleMakePrivate = useCallback(() => {
+    toggleShare.mutate();
+  }, [toggleShare]);
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
@@ -120,35 +167,109 @@ export function PropertyHeader({
           <p className="text-sm text-muted-foreground">{propertySubtitle}</p>
         )}
       </div>
-      <div className="flex items-center gap-3 print:hidden flex-shrink-0">
-        {isDemo ? (
-          <span
-            className={cn(
-              "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
-              "border border-primary text-primary bg-background",
-              "px-4 py-2 h-10",
-              onWatchlist && "bg-primary text-primary-foreground"
-            )}
-          >
-            <Star className={cn("w-4 h-4 mr-2", onWatchlist && "fill-current")} />
-            {onWatchlist ? "On Watchlist" : "Add to Watchlist"}
-          </span>
-        ) : (
-          <Button
-            variant="outline"
-            onClick={onToggleWatchlist}
-            disabled={!isAnalysisComplete}
-            className={cn(
-              "border-primary text-primary hover:bg-primary hover:text-primary-foreground",
-              onWatchlist && "bg-primary text-primary-foreground",
-              !isAnalysisComplete && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            <Star className={cn("w-4 h-4 mr-2", onWatchlist && "fill-current")} />
-            {onWatchlist ? "On Watchlist" : "Add to Watchlist"}
-          </Button>
-        )}
-        <DocumentChat reportId={reportId} propertyAddress={propertyAddress} isDemo={isDemo} isAnalysisComplete={isAnalysisComplete} />
+      <div className="flex items-center gap-3 print:hidden flex-shrink-0 flex-wrap">
+        <ButtonGroup
+          orientation="horizontal"
+          aria-label="Report actions"
+          className="rounded-xl overflow-hidden bg-background border border-border shadow-elevation-2 [&>*:first-child]:rounded-l-xl [&>*:last-child]:rounded-r-xl"
+        >
+          <DocumentChat
+            reportId={reportId}
+            propertyAddress={propertyAddress}
+            isDemo={isDemo}
+            isAnalysisComplete={isAnalysisComplete}
+            buttonClassName={(isDemo || canShare) ? "rounded-l-xl rounded-r-none border-0 shadow-none h-10" : undefined}
+          />
+          {(isDemo || canShare) && (
+            <ButtonGroupSeparator orientation="vertical" className="bg-neutral-200" />
+          )}
+          {isDemo ? (
+            <ButtonGroupText asChild>
+              <span className="inline-flex h-10 w-10 items-center justify-center text-foreground/70" aria-hidden>
+                <Star className={cn("w-4 h-4", onWatchlist && "fill-amber-500 text-amber-500")} />
+              </span>
+            </ButtonGroupText>
+          ) : (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={onToggleWatchlist}
+                    disabled={!isAnalysisComplete}
+                    className={cn(
+                      "h-10 w-10 rounded-none text-foreground/80 transition-colors duration-150 hover:bg-neutral-200 hover:text-foreground",
+                      onWatchlist && "text-amber-600 hover:text-amber-600"
+                    )}
+                  >
+                    <Star className={cn("w-4 h-4", onWatchlist && "fill-current")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {onWatchlist ? "On watchlist" : "Add to watchlist"}
+                </TooltipContent>
+              </Tooltip>
+              {canShare && (
+                <>
+                  <ButtonGroupSeparator orientation="vertical" className="bg-neutral-200" />
+                  {showShareField && shareUrl ? (
+                    <div className="flex items-center gap-0.5 pr-2 py-1 min-w-0 max-w-[200px] bg-muted/40">
+                      <Input
+                        value={shareUrl}
+                        readOnly
+                        className="h-8 text-xs border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 flex-1 min-w-0 rounded-none"
+                        onClick={(e) => e.currentTarget.select()}
+                      />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" onClick={handleCopyLink} className="h-8 w-8 shrink-0 rounded-md text-foreground/80 transition-colors duration-150 hover:bg-neutral-200 hover:text-foreground">
+                            <Copy className="w-3.5 h-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Copy link</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" onClick={handleMakePrivate} disabled={toggleShare.isPending} className="h-8 w-8 shrink-0 rounded-md text-foreground/80 transition-colors duration-150 hover:bg-neutral-200 hover:text-foreground">
+                            {toggleShare.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Make private</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  ) : (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          onClick={handleShare}
+                          disabled={toggleShare.isPending}
+                          className={cn(
+                            "h-10 w-10 rounded-none text-foreground/80 transition-colors duration-150 hover:bg-neutral-200 hover:text-foreground",
+                            isPublic && "text-primary"
+                          )}
+                        >
+                          {toggleShare.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : isPublic ? (
+                            <Link2 className="w-4 h-4" />
+                          ) : (
+                            <Share2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        {toggleShare.isPending ? "Sharing…" : isPublic ? "Copy link" : "Share report"}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </ButtonGroup>
       </div>
     </div>
   );
