@@ -3,11 +3,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { processLegalPack } from "@/lib/api/legalPackProcessor";
 
-export function useReport(id: string | undefined, isDemo: boolean) {
+export function useReport(id: string | undefined, isDemo: boolean, shareToken?: string | null) {
   return useQuery({
-    queryKey: ["report", id],
+    queryKey: ["report", id, shareToken],
     queryFn: async () => {
       if (isDemo) return null;
+      if (!id) return null;
+      
+      if (shareToken) {
+        const { data, error } = await supabase
+          .from("reports")
+          .select("*")
+          .eq("id", id)
+          .filter("share_token", "eq", shareToken)
+          .filter("is_public", "eq", true)
+          .maybeSingle();
+        if (error) throw error;
+        return data;
+      }
+      
       const { data, error } = await supabase
         .from("reports")
         .select("*")
@@ -104,6 +118,51 @@ export function useRetryAnalysis(id: string | undefined, isDemo: boolean, userId
     onError: (e) => {
       toast({
         title: "Failed to restart analysis",
+        description: e instanceof Error ? e.message : "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useToggleShare(id: string | undefined, isDemo: boolean, currentIsPublic: boolean) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (isDemo || !id) return { is_public: false, share_token: null };
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Please sign in to share reports");
+      
+      const { data, error } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: Error | null }>)('toggle_report_sharing', {
+        p_report_id: id,
+        p_user_id: user.id
+      });
+
+      if (error) throw error;
+      return data as { is_public: boolean; share_token: string | null };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["report", id] });
+      if (result.is_public && result.share_token) {
+        const shareUrl = `${window.location.origin}/reports/${id}?token=${result.share_token}`;
+        navigator.clipboard.writeText(shareUrl);
+        toast({
+          title: "Report shared publicly",
+          description: "Share link copied to clipboard",
+        });
+      } else {
+        toast({
+          title: "Sharing disabled",
+          description: "Report is now private",
+        });
+      }
+    },
+    onError: (e) => {
+      toast({
+        title: "Failed to toggle sharing",
         description: e instanceof Error ? e.message : "Please try again.",
         variant: "destructive",
       });
