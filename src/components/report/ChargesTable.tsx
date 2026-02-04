@@ -22,8 +22,6 @@ export function ChargesTable({ charges }: ChargesTableProps) {
           <td className="py-3 px-3 text-foreground font-medium">{charge.type}</td>
           <td className="py-3 px-3 text-foreground">{charge.name || charge.description || "—"}</td>
           <td className="py-3 px-3 text-foreground font-semibold">{charge.amount || "—"}</td>
-          <td className="py-3 px-3 text-foreground">{charge.date || "—"}</td>
-          <td className="py-3 px-3 text-foreground">{charge.paidOff || "—"}</td>
         </tr>
       ))}
     </>

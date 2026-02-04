@@ -39,8 +39,6 @@ function transformCharges(charges: unknown): Charge[] {
       type: (charge.type as string) || "Unknown",
       name: charge.name as string | undefined,
       amount: charge.amount as string | undefined,
-      date: charge.date as string | undefined,
-      paidOff: (charge.paidOff as string) || (charge.paid_off as string) || undefined,
       description: charge.description as string | undefined,
     };
   });

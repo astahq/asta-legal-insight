@@ -52,12 +52,6 @@ export function AnalysisContent({ analysis }: AnalysisContentProps) {
                     <th className="text-left py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
                       Amount
                     </th>
-                    <th className="text-left py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-                      Date
-                    </th>
-                    <th className="text-left py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-                      Paid Off
-                    </th>
                   </tr>
                 </thead>
                 <tbody>

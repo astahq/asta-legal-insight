@@ -10,8 +10,6 @@ export interface Charge {
   amount?: string;
   description?: string;
   name?: string;
-  date?: string;
-  paidOff?: string;
 }
 
 export interface Document {
@@ -504,24 +502,10 @@ export const demoReport: DemoReport = {
       guide_price: '£160,000',
       auction_date: '27/01/2026',
       buyers_charge: '£1,560 inc VAT',
-      size_citation: '',
       catalog_number: 'Lot 40',
-      tenure_citation: 'Tenure section',
-      address_citation: 'Markdown content',
-      lot_type_citation: 'Property description',
       number_of_bedrooms: 2,
-      epc_rating_citation: '',
       number_of_bathrooms: 1,
-      council_tax_citation: '',
-      description_citation: 'Description section',
-      guide_price_citation: 'Auction listing',
-      auction_date_citation: 'Auction listing',
-      buyers_charge_citation: 'Buyers Premium section',
-      catalog_number_citation: 'Auction listing',
       administration_charge_band: '£1,200 inc VAT',
-      number_of_bedrooms_citation: 'Listing details',
-      number_of_bathrooms_citation: 'Description section',
-      administration_charge_band_citation: 'Administration Charge section'
     }
   },
   analysis_result: demoReportAnalysis
