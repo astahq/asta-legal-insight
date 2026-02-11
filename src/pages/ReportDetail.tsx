@@ -11,7 +11,12 @@ import { PropertyHeader } from "@/components/report/PropertyHeader";
 import { PropertyDetails } from "@/components/report/PropertyDetails";
 import { AnalysisStatus } from "@/components/report/AnalysisStatus";
 import { AnalysisContent } from "@/components/report/AnalysisContent";
-import { useReport, useToggleWatchlist, useUpdateReportName, useRetryAnalysis } from "@/hooks/useReport";
+import {
+  useReport,
+  useToggleWatchlist,
+  useUpdateReportName,
+  useRetryAnalysis,
+} from "@/hooks/useReport";
 import { useSearchParams } from "react-router-dom";
 
 const ReportDetail = () => {
@@ -20,19 +25,33 @@ const ReportDetail = () => {
   const { user } = useAuth();
   const isDemo = id === "demo";
   const [demoWatchlist, setDemoWatchlist] = useState(false);
-  const shareToken = searchParams.get('token');
+  const shareToken = searchParams.get("token");
 
   const { data: report, isLoading, error } = useReport(id, isDemo, shareToken);
   const currentReport = isDemo ? demoReport : report;
-  const toggleWatchlist = useToggleWatchlist(id, isDemo, isDemo ? demoWatchlist : currentReport?.on_watchlist ?? false);
+  const toggleWatchlist = useToggleWatchlist(
+    id,
+    isDemo,
+    isDemo ? demoWatchlist : (currentReport?.on_watchlist ?? false),
+  );
   const updateReportName = useUpdateReportName(id, isDemo);
-  const retryAnalysis = useRetryAnalysis(id, isDemo, user?.id, currentReport?.property_url || undefined);
+  const retryAnalysis = useRetryAnalysis(
+    id,
+    isDemo,
+    user?.id,
+    currentReport?.property_url || undefined,
+  );
 
-  const extractAddress = (currentReport?.scraped_data as unknown as { extract: { address: string } })?.extract?.address;
-  const propertyAddress = getDisplayAddress(extractAddress || "Document Analysis");
-  const fullPropertyAddress = currentReport?.property_address || "Document Analysis";
-  const propertySubtitle = isDemo 
-    ? (currentReport as typeof demoReport)?.property_subtitle ?? ""
+  const extractAddress = (
+    currentReport?.scraped_data as unknown as { extract: { address: string } }
+  )?.extract?.address;
+  const propertyAddress = getDisplayAddress(
+    extractAddress || "Document Analysis",
+  );
+  const fullPropertyAddress =
+    currentReport?.property_address || "Document Analysis";
+  const propertySubtitle = isDemo
+    ? ((currentReport as typeof demoReport)?.property_subtitle ?? "")
     : extractPropertySubtitle(extractAddress);
   const onWatchlist = isDemo ? demoWatchlist : currentReport?.on_watchlist;
 
@@ -44,8 +63,11 @@ const ReportDetail = () => {
   };
 
   const rawAnalysis = currentReport?.analysis_result || null;
-  const analysis: ReportAnalysis | null = rawAnalysis ? transformAnalysisResult(rawAnalysis, currentReport) : null;
-  const isAnalysisComplete = isDemo || (analysis && currentReport?.status === "completed");
+  const analysis: ReportAnalysis | null = rawAnalysis
+    ? transformAnalysisResult(rawAnalysis, currentReport)
+    : null;
+  const isAnalysisComplete =
+    isDemo || (analysis && currentReport?.status === "completed");
 
   if (isLoading && !isDemo) {
     return (
@@ -87,22 +109,34 @@ const ReportDetail = () => {
           reportId={id || "demo"}
           isDemo={isDemo}
           isAnalysisComplete={isAnalysisComplete}
-          isPublic={!isDemo && report && 'is_public' in report ? Boolean((report as Record<string, unknown>).is_public) : false}
-          shareToken={!isDemo && report && 'share_token' in report ? (report as Record<string, unknown>).share_token as string | null : null}
+          isPublic={
+            !isDemo && report && "is_public" in report
+              ? Boolean((report as Record<string, unknown>).is_public)
+              : false
+          }
+          shareToken={
+            !isDemo && report && "share_token" in report
+              ? ((report as Record<string, unknown>).share_token as
+                  | string
+                  | null)
+              : null
+          }
         />
 
-        {analysis?.propertyDetails && (
-          <PropertyDetails details={analysis.propertyDetails} />
-        )}
+        <PropertyDetails details={analysis?.propertyDetails} />
 
         <div className="flex items-center gap-2 text-sm text-success bg-success/10 border border-success/20 px-4 py-3 rounded-lg">
           <CheckCircle className="w-4 h-4 flex-shrink-0" />
-          <span className="font-medium">Not legal advice - your smarter due-diligence co-pilot</span>
+          <span className="font-medium">
+            Not legal advice - your smarter due-diligence co-pilot
+          </span>
         </div>
 
         {!isDemo && (!analysis || currentReport?.status !== "completed") ? (
           <AnalysisStatus
-            status={currentReport?.status === "failed" ? "failed" : "processing"}
+            status={
+              currentReport?.status === "failed" ? "failed" : "processing"
+            }
             onRetry={() => retryAnalysis.mutate()}
             isRetrying={retryAnalysis.isPending}
             requiresAuth={!user}

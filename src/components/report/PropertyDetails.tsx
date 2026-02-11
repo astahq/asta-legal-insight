@@ -4,28 +4,43 @@ import { Separator } from "@/components/ui/separator";
 import ReactMarkdown from "react-markdown";
 
 interface PropertyDetailsProps {
-  details: PropertyDetailsType;
+  details?: PropertyDetailsType | undefined;
+}
+
+function hasPropertyDetails(d: PropertyDetailsType | undefined): boolean {
+  return !!d?.guidePrice || !!d?.auctionDate || !!d?.propertyType;
 }
 
 export function PropertyDetails({ details }: PropertyDetailsProps) {
+  if (!hasPropertyDetails(details)) return null;
 
   return (
     <Card>
       <CardHeader>
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">Guide Price</p>
+            <p className="text-sm font-medium text-muted-foreground mb-1">
+              Guide Price
+            </p>
             <p className="text-3xl font-bold text-foreground">
-              {details.guidePrice && details.guidePrice !== "Unknown" ? details.guidePrice : "—"}
+              {details.guidePrice && details.guidePrice !== "Unknown"
+                ? details.guidePrice
+                : "—"}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm font-medium text-muted-foreground mb-1">Auction Date</p>
+            <p className="text-sm font-medium text-muted-foreground mb-1">
+              Auction Date
+            </p>
             <p className="text-xl font-semibold text-foreground">
-              {details.auctionDate && details.auctionDate !== "Unknown" ? details.auctionDate : "—"}
+              {details.auctionDate && details.auctionDate !== "Unknown"
+                ? details.auctionDate
+                : "—"}
             </p>
             {details.auctionDateNote && (
-              <p className="text-xs text-muted-foreground mt-0.5">{details.auctionDateNote}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {details.auctionDateNote}
+              </p>
             )}
           </div>
         </div>
@@ -34,7 +49,11 @@ export function PropertyDetails({ details }: PropertyDetailsProps) {
         <Separator />
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
           <DetailItem label="Address" value={details.address} />
-          <DetailItem label="Property Type" value={details.propertyType} isUnknown />
+          <DetailItem
+            label="Property Type"
+            value={details.propertyType}
+            isUnknown
+          />
           <DetailItem label="Bedrooms" value={details.bedrooms} />
           <DetailItem label="Bathrooms" value={details.bathrooms ?? 1} />
           <DetailItem label="Size" value={details.size} isUnknown />
@@ -43,7 +62,10 @@ export function PropertyDetails({ details }: PropertyDetailsProps) {
           <DetailItem label="EPC Rating" value={details.epcRating} />
           <DetailItem label="Council Tax" value={details.councilTax} />
           <DetailItem label="Buyers' Charge" value={details.buyersCharge} />
-          <DetailItem label="Admin Charge Band" value={details.administrationChargeBand} />
+          <DetailItem
+            label="Admin Charge Band"
+            value={details.administrationChargeBand}
+          />
         </div>
         {details.description && (
           <>
@@ -55,22 +77,32 @@ export function PropertyDetails({ details }: PropertyDetailsProps) {
               <ReactMarkdown
                 components={{
                   p: ({ ...props }) => (
-                    <p className="text-sm text-foreground leading-relaxed mb-2 last:mb-0" {...props} />
+                    <p
+                      className="text-sm text-foreground leading-relaxed mb-2 last:mb-0"
+                      {...props}
+                    />
                   ),
                   strong: ({ ...props }) => (
                     <strong className="font-semibold" {...props} />
                   ),
-                  em: ({ ...props }) => (
-                    <em className="italic" {...props} />
-                  ),
+                  em: ({ ...props }) => <em className="italic" {...props} />,
                   ul: ({ ...props }) => (
-                    <ul className="list-disc list-inside my-2 space-y-1" {...props} />
+                    <ul
+                      className="list-disc list-inside my-2 space-y-1"
+                      {...props}
+                    />
                   ),
                   ol: ({ ...props }) => (
-                    <ol className="list-decimal list-inside my-2 space-y-1" {...props} />
+                    <ol
+                      className="list-decimal list-inside my-2 space-y-1"
+                      {...props}
+                    />
                   ),
                   li: ({ ...props }) => (
-                    <li className="text-sm text-foreground leading-relaxed" {...props} />
+                    <li
+                      className="text-sm text-foreground leading-relaxed"
+                      {...props}
+                    />
                   ),
                 }}
               >
@@ -94,13 +126,18 @@ function DetailItem({
   isUnknown?: boolean;
 }) {
   const displayValue =
-    value === undefined || value === null || value === "" || (isUnknown && value === "Unknown")
+    value === undefined ||
+    value === null ||
+    value === "" ||
+    (isUnknown && value === "Unknown")
       ? "—"
       : value;
 
   return (
     <div className="space-y-1">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        {label}
+      </p>
       <p className="text-sm font-semibold text-foreground">{displayValue}</p>
     </div>
   );
