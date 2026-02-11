@@ -40,7 +40,8 @@ export function PricingCard({
 }: PricingCardProps) {
   return (
     <Card className={cn(
-      'relative flex flex-col',
+      'relative flex flex-col overflow-visible',
+
       isPopular && !isCurrentPlan && 'border-primary shadow-lg',
       isCurrentPlan && 'border-success'
     )}>

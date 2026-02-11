@@ -125,7 +125,7 @@ export default function Pricing() {
   const professionalPlan = plans.find(p => p.id === 'professional');
 
   const starterFeatures = starterPlan?.features.map(f => ({ text: f, included: true })) || [
-    { text: '100 legal pack analyses per month', included: true },
+    { text: '50 legal pack analyses per month', included: true },
     { text: 'AI-powered document review', included: true },
     { text: 'Risk assessment scoring', included: true },
     { text: 'Document chat assistant', included: true },
@@ -133,7 +133,7 @@ export default function Pricing() {
   ];
 
   const professionalFeatures = professionalPlan?.features.map(f => ({ text: f, included: true })) || [
-    { text: '300 legal pack analyses per month', included: true },
+    { text: '150 legal pack analyses per month', included: true },
     { text: 'Everything in Starter', included: true },
     { text: 'Priority support', included: true },
     { text: 'Advanced analytics', included: true },

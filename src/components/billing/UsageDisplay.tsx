@@ -59,7 +59,7 @@ export function UsageDisplay({ variant = 'compact', showUpgradeButton = true, cl
               </p>
               {access?.planId === 'starter' && (
                 <p className="text-xs text-primary">
-                  Upgrade to Professional for 300 reports/month
+                  Upgrade to Professional for 150 reports/month
                 </p>
               )}
             </div>
@@ -135,7 +135,7 @@ export function UsageDisplay({ variant = 'compact', showUpgradeButton = true, cl
               className="w-full"
             >
               <TrendingUp className="w-4 h-4 mr-2" />
-              Upgrade to Professional (300/month)
+              Upgrade to Professional (150/month)
             </Button>
           )}
         </div>

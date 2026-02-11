@@ -162,7 +162,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
       
       if (hasSubscription) {
         const sub = data.subscription;
-        const usageLimit = sub.usageLimit ?? (sub.planId === 'starter' ? 100 : sub.planId === 'professional' ? 300 : 0);
+        const usageLimit = sub.usageLimit ?? (sub.planId === 'starter' ? 50 : sub.planId === 'professional' ? 150 : 0);
         const usageCount = sub.usageCount ?? 0;
         const usageRemaining = Math.max(0, usageLimit - usageCount);
 
@@ -233,7 +233,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
 
         if (subscription) {
-          const usageLimit = subscription.usage_limit ?? (subscription.plan_id === 'starter' ? 100 : subscription.plan_id === 'professional' ? 300 : 0);
+          const usageLimit = subscription.usage_limit ?? (subscription.plan_id === 'starter' ? 50 : subscription.plan_id === 'professional' ? 150 : 0);
           const usageCount = subscription.usage_count ?? 0;
           const usageRemaining = Math.max(0, usageLimit - usageCount);
           

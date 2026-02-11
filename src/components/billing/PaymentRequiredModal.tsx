@@ -115,7 +115,7 @@ export function PaymentRequiredModal({
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li className="flex items-center gap-2">
                   <FileText className="w-3.5 h-3.5 text-success" />
-                  300 legal pack analyses per month
+                  150 legal pack analyses per month
                 </li>
                 <li className="flex items-center gap-2">
                   <Crown className="w-3.5 h-3.5 text-success" />
@@ -144,7 +144,7 @@ export function PaymentRequiredModal({
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li className="flex items-center gap-2">
                     <FileText className="w-3.5 h-3.5 text-success" />
-                    100 legal pack analyses per month
+                    50 legal pack analyses per month
                   </li>
                   <li className="flex items-center gap-2">
                     <Crown className="w-3.5 h-3.5 text-success" />
@@ -180,7 +180,7 @@ export function PaymentRequiredModal({
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li className="flex items-center gap-2">
                     <FileText className="w-3.5 h-3.5 text-success" />
-                    300 legal pack analyses per month
+                    150 legal pack analyses per month
                   </li>
                   <li className="flex items-center gap-2">
                     <Crown className="w-3.5 h-3.5 text-success" />
