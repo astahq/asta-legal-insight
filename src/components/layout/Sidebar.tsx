@@ -1,8 +1,8 @@
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Star, 
-  Settings, 
+import {
+  LayoutDashboard,
+  FileText,
+  Star,
+  Settings,
   HelpCircle,
   Plus,
   LogOut,
@@ -24,23 +24,23 @@ import { usePostHog } from "posthog-js/react";
 function SidebarUsageDisplay() {
   const navigate = useNavigate();
   const { usage, access, subscription, hasUsageLimits, isNearLimit, isAtLimit, isPaidPlan, isTrialActive, isCanceled } = useBilling();
-  
+
   const hasValidSubscription = Boolean(
     subscription && ['active', 'trialing'].includes(subscription.status)
   );
 
   if (!access?.hasAccess && !isTrialActive && !hasValidSubscription) {
     return (
-      <div className="p-3">
+      <div className="px-3 pb-3">
         <button
           onClick={() => navigate('/pricing')}
-          className="w-full p-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-left"
+          className="w-full p-3 rounded-lg bg-sidebar-primary/10 hover:bg-sidebar-primary/20 transition-colors text-left"
         >
-          <div className="flex items-center gap-2 text-primary font-medium text-sm">
+          <div className="flex items-center gap-2 text-sidebar-primary font-medium text-sm">
             <Crown className="w-4 h-4" />
             Upgrade to Pro
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-[hsl(var(--sidebar-muted-foreground))] mt-1">
             Get unlimited analyses
           </p>
         </button>
@@ -48,14 +48,13 @@ function SidebarUsageDisplay() {
     );
   }
 
-  // Unlimited plan
   if (isPaidPlan && !hasUsageLimits) {
     return (
-      <div className="p-3">
-        <div className="p-3 rounded-lg bg-sidebar-accent/50">
+      <div className="px-3 pb-3">
+        <div className="p-3 rounded-xl bg-sidebar-accent">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Plan</span>
-            <span className="text-xs font-medium text-green-600 capitalize">
+            <span className="text-xs text-[hsl(var(--sidebar-muted-foreground))]">Plan</span>
+            <span className="text-xs font-medium text-emerald-400 capitalize">
               {access?.planId || 'Professional'}
             </span>
           </div>
@@ -67,47 +66,47 @@ function SidebarUsageDisplay() {
 
   if (hasUsageLimits && usage) {
     return (
-      <div className="p-3">
+      <div className="px-3 pb-3">
         <div className={cn(
-          "p-3 rounded-lg transition-colors",
-          isAtLimit ? "bg-destructive/10" : isNearLimit ? "bg-yellow-500/10" : isCanceled ? "bg-orange-500/10" : "bg-sidebar-accent/50"
+          "p-3 rounded-xl transition-colors",
+          isAtLimit ? "bg-red-500/[0.06]" : isNearLimit ? "bg-yellow-500/[0.06]" : isCanceled ? "bg-orange-500/[0.06]" : "bg-sidebar-accent"
         )}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-[hsl(var(--sidebar-muted-foreground))]">
               {isTrialActive ? 'Trial Usage' : isCanceled ? 'Canceling' : 'Monthly Usage'}
             </span>
             <span className={cn(
               "text-xs font-medium",
-              isAtLimit ? "text-destructive" : isNearLimit ? "text-yellow-600" : "text-sidebar-foreground"
+              isAtLimit ? "text-red-400" : isNearLimit ? "text-yellow-400" : "text-sidebar-foreground"
             )}>
               {usage.remaining} left
             </span>
           </div>
-          <Progress 
-            value={usage.percentUsed} 
+          <Progress
+            value={usage.percentUsed}
             className={cn(
-              "h-1.5",
-              isAtLimit && "[&>div]:bg-destructive",
-              isNearLimit && !isAtLimit && "[&>div]:bg-yellow-500"
+              "h-1",
+              isAtLimit && "[&>div]:bg-red-400",
+              isNearLimit && !isAtLimit && "[&>div]:bg-yellow-400"
             )}
           />
           <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-[hsl(var(--sidebar-muted-foreground))]">
               {usage.used} / {usage.limit} used
             </span>
             {access?.planId === 'starter' && !isTrialActive && !isCanceled && (
-              <button 
+              <button
                 onClick={() => navigate('/pricing')}
-                className="text-xs text-primary hover:underline flex items-center gap-1"
+                className="text-xs text-sidebar-primary hover:underline flex items-center gap-1"
               >
                 <TrendingUp className="w-3 h-3" />
                 Upgrade
               </button>
             )}
             {isCanceled && (
-              <button 
+              <button
                 onClick={() => navigate('/billing')}
-                className="text-xs text-orange-600 hover:underline"
+                className="text-xs text-orange-400 hover:underline"
               >
                 Reactivate
               </button>
@@ -170,29 +169,29 @@ function SidebarContent() {
       button_text: buttonText,
     });
   };
-  
+
   return (
-    <div className="w-64 h-full bg-sidebar flex flex-col">
-      <div className="p-4 border-b border-sidebar-border">
-        <Link to="/" className="flex items-center gap-2" onClick={handleLinkClick}>
-          <div className="w-8 h-8 flex items-center justify-center">
-            <img src={astaLogo} alt="Asta" className="w-8 h-8 object-contain" />
+    <div className="w-60 h-full bg-sidebar flex flex-col">
+      <div className="px-4 pt-5 pb-6">
+        <Link to="/" className="flex items-center gap-2.5" onClick={handleLinkClick}>
+          <div className="w-7 h-7 flex items-center justify-center">
+            <img src={astaLogo} alt="Asta" className="w-7 h-7 object-contain" />
           </div>
-          <span className="font-semibold text-sidebar-foreground">Asta</span>
+          <span className="font-semibold text-sidebar-foreground tracking-tight">Asta</span>
         </Link>
       </div>
 
-      <div className="p-4">
-        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+      <div className="px-3 pb-5">
+        <Button asChild variant="primary" className="w-full h-9 text-[13px]">
           <Link to="/upload" onClick={handleLinkClick}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Property Analysis
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            New Analysis
           </Link>
         </Button>
       </div>
 
       <nav className="flex-1 px-3">
-        <ul className="space-y-1">
+        <ul className="space-y-0.5">
           {mainNavItems.map((item) => (
             <li key={item.label}>
               {item.disabled ? (
@@ -204,7 +203,7 @@ function SidebarContent() {
                     }
                   }}
                 >
-                  <item.icon className="w-5 h-5" />
+                  <item.icon className="w-4 h-4" />
                   <span className="flex-1">{item.label}</span>
                   {item.badge && (
                     <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium", item.badgeColor)}>
@@ -228,7 +227,7 @@ function SidebarContent() {
                     location.pathname === item.href && "nav-item-active"
                   )}
                 >
-                  <item.icon className="w-5 h-5" />
+                  <item.icon className="w-4 h-4" />
                   <span className="flex-1">{item.label}</span>
                   {item.badge && (
                     <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium", item.badgeColor)}>
@@ -242,15 +241,15 @@ function SidebarContent() {
         </ul>
       </nav>
 
-      <div className="mt-auto border-t border-sidebar-border">
-        {/* Usage Display */}
+      <div className="mt-auto">
+        <div className="mx-3 mb-2 h-px bg-sidebar-border" />
         <SidebarUsageDisplay />
-        
-        <nav className="p-3">
-          <ul className="space-y-1">
+
+        <nav className="px-3 pb-4">
+          <ul className="space-y-0.5">
             {bottomNavItems.map((item) => (
               <li key={item.label}>
-                <Link 
+                <Link
                   to={item.href}
                   onClick={() => {
                     if (isMobile) {
@@ -265,13 +264,13 @@ function SidebarContent() {
                     location.pathname === item.href && "nav-item-active"
                   )}
                 >
-                  <item.icon className="w-5 h-5" />
+                  <item.icon className="w-4 h-4" />
                   <span>{item.label}</span>
                 </Link>
               </li>
             ))}
             <li>
-              <Link 
+              <Link
                 to="/support"
                 onClick={() => {
                   if (isMobile) {
@@ -284,17 +283,17 @@ function SidebarContent() {
                   location.pathname === "/support" && "nav-item-active"
                 )}
               >
-                <HelpCircle className="w-5 h-5" />
+                <HelpCircle className="w-4 h-4" />
                 <span>Support</span>
               </Link>
             </li>
             <li>
-              <button 
+              <button
                 onClick={handleSignOut}
-                className="nav-item w-full text-left text-destructive hover:bg-destructive/10"
+                className="nav-item w-full text-left text-red-400 hover:text-red-400 hover:bg-red-500/10"
               >
-                <LogOut className="w-5 h-5" />
-                <span>Exit</span>
+                <LogOut className="w-4 h-4" />
+                <span>Sign out</span>
               </button>
             </li>
           </ul>
@@ -310,7 +309,7 @@ export function Sidebar() {
   if (isMobile) {
     return (
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border">
+        <SheetContent side="left" className="w-60 p-0 bg-sidebar border-sidebar-border">
           <SidebarContent />
         </SheetContent>
       </Sheet>
@@ -318,7 +317,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="hidden md:flex border-r border-sidebar-border">
+    <aside className="hidden md:flex">
       <SidebarContent />
     </aside>
   );
