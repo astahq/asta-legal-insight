@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useBilling } from '@/contexts/BillingContext';
 import { useNavigate } from 'react-router-dom';
 import { format, formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface UsageDisplayProps {
   variant?: 'compact' | 'full';
@@ -30,20 +31,24 @@ export function UsageDisplay({ variant = 'compact', showUpgradeButton = true, cl
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer ${
+            <div className={cn(
+              'flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer',
               isAtLimit ? 'bg-destructive/10 border-destructive/30' :
               isNearLimit ? 'bg-warning/10 border-warning/30' :
-              'bg-muted/50 border-border'
-            } ${className}`}>
-              <FileText className={`w-4 h-4 ${
+              'bg-muted/50 border-border',
+              className
+            )}>
+              <FileText className={cn(
+                'w-4 h-4',
                 isAtLimit ? 'text-destructive' :
                 isNearLimit ? 'text-warning' :
                 'text-muted-foreground'
-              }`} />
-              <span className={`text-sm font-medium ${
+              )} />
+              <span className={cn(
+                'text-sm font-medium',
                 isAtLimit ? 'text-destructive' :
                 isNearLimit ? 'text-warning' : ''
-              }`}>
+              )}>
                 {usage.remaining}/{usage.limit}
               </span>
             </div>
@@ -69,73 +74,99 @@ export function UsageDisplay({ variant = 'compact', showUpgradeButton = true, cl
     );
   }
 
+  const radius = 24;
+  const circumference = 2 * Math.PI * radius;
+  const remainingPercent = 100 - usage.percentUsed;
+  const strokeDashoffset = circumference - (remainingPercent / 100) * circumference;
+
   return (
-    <Card className={`${
-      isAtLimit ? 'border-destructive bg-destructive/5' :
-      isNearLimit ? 'border-warning bg-warning/5' : ''
-    } ${className}`}>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="font-semibold flex items-center gap-2">
-              {isAtLimit && <AlertTriangle className="w-4 h-4 text-destructive" />}
-              Monthly Usage
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {access?.planId === 'starter' ? 'Starter Plan' : 
-               access?.planId === 'professional' ? 'Professional Plan' : 
-               access?.planId === 'trial' ? 'Trial' : 'Current Plan'}
+    <Card className={cn(
+      isAtLimit ? 'border-destructive/30' :
+      isNearLimit ? 'border-warning/30' : '',
+      className
+    )}>
+      <CardContent className="pt-5 pb-4">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="relative flex-shrink-0">
+            <svg width="56" height="56" viewBox="0 0 56 56" className="-rotate-90">
+              <circle cx="28" cy="28" r={radius} fill="none" strokeWidth="5" className="stroke-muted/50" />
+              <circle
+                cx="28" cy="28" r={radius} fill="none" strokeWidth="5" strokeLinecap="round"
+                className={cn(
+                  'transition-all duration-700 ease-out',
+                  isAtLimit ? 'stroke-destructive' : isNearLimit ? 'stroke-warning' : 'stroke-primary'
+                )}
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className={cn(
+                'text-base font-bold leading-none',
+                isAtLimit ? 'text-destructive' : isNearLimit ? 'text-warning' : 'text-primary'
+              )}>
+                {usage.remaining}
+              </span>
+              <span className="text-[7px] text-muted-foreground mt-0.5">left</span>
+            </div>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                {isAtLimit && <AlertTriangle className="w-3.5 h-3.5 text-destructive" />}
+                Monthly Usage
+              </h3>
+              <Badge variant={isAtLimit ? 'destructive' : isNearLimit ? 'secondary' : 'outline'} className="text-xs">
+                {access?.planId === 'starter' ? 'Starter' :
+                 access?.planId === 'professional' ? 'Professional' :
+                 access?.planId === 'trial' ? 'Trial' : 'Plan'}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {usage.used} of {usage.limit} reports used
             </p>
           </div>
-          <Badge variant={isAtLimit ? 'destructive' : isNearLimit ? 'secondary' : 'outline'}>
-            {usage.remaining} remaining
-          </Badge>
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>{usage.used} used</span>
-              <span>{usage.limit} limit</span>
-            </div>
-            <Progress 
-              value={usage.percentUsed} 
-              className={`h-3 ${
+        <div className="space-y-3">
+          <div>
+            <Progress
+              value={usage.percentUsed}
+              className={cn('h-2',
                 isAtLimit ? '[&>div]:bg-destructive' :
                 isNearLimit ? '[&>div]:bg-warning' : ''
-              }`}
+              )}
             />
+            {resetDate && (
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                Resets {format(resetDate, 'MMM d, yyyy')} ({resetText})
+              </p>
+            )}
           </div>
 
-          {resetDate && (
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Resets on {format(resetDate, 'MMM d, yyyy')}</span>
-              <span>{resetText}</span>
-            </div>
-          )}
-
           {isAtLimit && (
-            <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-              <p className="font-medium">You've reached your monthly limit</p>
-              <p>Upgrade your plan or wait for the reset to continue analysing legal packs.</p>
+            <div className="p-2.5 rounded-lg bg-destructive/10 text-destructive text-xs">
+              <p className="font-medium">Monthly limit reached</p>
+              <p className="mt-0.5">Upgrade or wait for reset to continue.</p>
             </div>
           )}
 
           {isNearLimit && !isAtLimit && (
-            <div className="p-3 rounded-lg bg-warning/10 text-warning-foreground text-sm">
-              <p className="font-medium">Approaching your monthly limit</p>
-              <p>You have {usage.remaining} analyses remaining this month.</p>
+            <div className="p-2.5 rounded-lg bg-warning/10 text-warning-foreground text-xs">
+              <p className="font-medium">Approaching limit — {usage.remaining} remaining</p>
             </div>
           )}
 
           {showUpgradeButton && access?.planId === 'starter' && (
-            <Button 
-              onClick={() => navigate('/pricing')} 
-              variant={isAtLimit ? 'default' : 'outline'}
+            <Button
+              onClick={() => navigate('/pricing')}
+              variant={isAtLimit ? 'primary' : 'outline'}
+              size="sm"
               className="w-full"
             >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Upgrade to Professional (150/month)
+              <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
+              Upgrade to Professional (150/mo)
             </Button>
           )}
         </div>
