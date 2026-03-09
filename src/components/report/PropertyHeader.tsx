@@ -146,7 +146,7 @@ export function PropertyHeader({
         ) : (
           <div className="flex items-start gap-3 group min-w-0">
             <h1
-              className="text-3xl font-bold tracking-tight text-foreground break-words line-clamp-2"
+              className="text-xl md:text-2xl font-semibold tracking-tight text-foreground break-words line-clamp-2"
               title={showFullTitle ? fullPropertyAddress : undefined}
             >
               {propertyAddress}
