@@ -126,58 +126,60 @@ export default function Billing() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="max-w-4xl mx-auto space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Billing</h1>
-            <p className="text-muted-foreground">Manage your subscription and usage</p>
+            <h1 className="text-xl font-semibold text-foreground">Billing & Settings</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Manage your subscription and usage</p>
           </div>
           {subscription && ['active', 'trialing'].includes(subscription.status) && (
-            <Badge variant={isCanceled ? 'outline' : 'secondary'} className="gap-1">
-              <CheckCircle2 className={`w-4 h-4 ${isCanceled ? 'text-muted-foreground' : 'text-success'}`} />
+            <Badge variant={isCanceled ? 'outline' : 'secondary'} className="gap-1.5 px-3 py-1">
+              <CheckCircle2 className={`w-3.5 h-3.5 ${isCanceled ? 'text-muted-foreground' : 'text-success'}`} />
               {access?.planId === 'starter' ? 'Starter' : access?.planId === 'professional' ? 'Professional' : 'Active'} Plan
               {isCanceled && ' (Canceling)'}
             </Badge>
           )}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
           {hasUsageLimits && <UsageDisplay variant="full" />}
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
-                Subscription Details
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-muted-foreground" />
+                Subscription
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {subscription && ['active', 'trialing'].includes(subscription.status) ? (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Plan</p>
-                      <p className="font-medium capitalize">{access?.planId}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-muted/40 rounded-lg px-3 py-2.5">
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Plan</p>
+                      <p className="text-sm font-medium capitalize mt-0.5">{access?.planId}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Status</p>
-                      <Badge variant={isCanceled ? 'outline' : subscription.status === 'active' ? 'default' : 'secondary'}>
-                        {isCanceled ? 'Canceling' : subscription.status}
-                      </Badge>
+                    <div className="bg-muted/40 rounded-lg px-3 py-2.5">
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Status</p>
+                      <div className="mt-0.5">
+                        <Badge variant={isCanceled ? 'outline' : subscription.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                          {isCanceled ? 'Canceling' : subscription.status}
+                        </Badge>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        {isCanceled ? 'Access ends on' : 'Next billing date'}
+                    <div className="bg-muted/40 rounded-lg px-3 py-2.5">
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+                        {isCanceled ? 'Ends on' : 'Next billing'}
                       </p>
-                      <p className="font-medium">
-                        {subscription.currentPeriodEnd && 
-                          format(new Date(subscription.currentPeriodEnd), 'MMMM d, yyyy')}
+                      <p className="text-sm font-medium mt-0.5">
+                        {subscription.currentPeriodEnd &&
+                          format(new Date(subscription.currentPeriodEnd), 'MMM d, yyyy')}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Price</p>
-                      <p className="font-medium">
-                        £{access?.planId === 'starter' ? '99' : access?.planId === 'professional' ? '249' : '0'}/month
+                    <div className="bg-muted/40 rounded-lg px-3 py-2.5">
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Price</p>
+                      <p className="text-sm font-medium mt-0.5">
+                        £{access?.planId === 'starter' ? '99' : access?.planId === 'professional' ? '249' : '0'}/mo
                       </p>
                     </div>
                   </div>
@@ -185,15 +187,14 @@ export default function Billing() {
                   {isCanceled && (
                     <div className="p-3 rounded-lg bg-warning/10 text-warning-foreground text-sm">
                       <p className="font-medium">Subscription scheduled to cancel</p>
-                      <p>You'll retain access until {subscription.currentPeriodEnd && format(new Date(subscription.currentPeriodEnd), 'MMMM d, yyyy')}. You can reactivate anytime before then.</p>
+                      <p className="text-xs mt-0.5">Access until {subscription.currentPeriodEnd && format(new Date(subscription.currentPeriodEnd), 'MMMM d, yyyy')}</p>
                     </div>
                   )}
 
-                  <Separator />
-
-                  <div className="space-y-2">
+                  <div className="space-y-2 pt-1">
                     <Button
                       variant="outline"
+                      size="sm"
                       className="w-full justify-between"
                       onClick={handleManageSubscription}
                       disabled={portalLoading}
@@ -203,25 +204,25 @@ export default function Billing() {
                       ) : (
                         <>
                           <span>{isCanceled ? 'Reactivate Subscription' : 'Manage Subscription'}</span>
-                          <ExternalLink className="w-4 h-4" />
+                          <ExternalLink className="w-3.5 h-3.5" />
                         </>
                       )}
                     </Button>
-                    
+
                     {access?.planId === 'starter' && !isCanceled && (
-                      <Button className="w-full" onClick={() => navigate('/pricing')}>
-                        <TrendingUp className="w-4 h-4 mr-2" />
+                      <Button variant="primary" size="sm" className="w-full" onClick={() => navigate('/pricing')}>
+                        <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
                         Upgrade to Professional
                       </Button>
                     )}
                   </div>
                 </>
               ) : (
-                <div className="text-center py-4">
-                  <p className="text-muted-foreground mb-4">
-                    No active subscription. Choose a plan to start analysing legal packs.
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    No active subscription
                   </p>
-                  <Button onClick={() => navigate('/pricing')}>
+                  <Button variant="primary" size="sm" onClick={() => navigate('/pricing')}>
                     View Pricing Plans
                   </Button>
                 </div>
@@ -231,43 +232,42 @@ export default function Billing() {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Receipt className="w-5 h-5" />
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-muted-foreground" />
               Payment History
             </CardTitle>
-            <CardDescription>View your recent transactions</CardDescription>
           </CardHeader>
           <CardContent>
             {loadingPayments ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             ) : payments.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <Receipt className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No payment history yet</p>
-                <p className="text-sm mt-1">Your transactions will appear here</p>
+                <Receipt className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                <p className="text-sm">No payment history yet</p>
+                <p className="text-xs mt-1">Your transactions will appear here</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="divide-y divide-border/50">
                 {payments.map((payment) => (
                   <div
                     key={payment.id}
-                    className="flex items-center justify-between py-3 border-b border-border last:border-0"
+                    className="flex items-center justify-between py-3"
                   >
                     <div>
                       <p className="text-sm font-medium text-foreground">
                         {format(new Date(payment.created_at), 'MMM d, yyyy')}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {payment.payment_type === 'subscription' 
-                          ? 'Pro Plan - Monthly' 
+                        {payment.payment_type === 'subscription'
+                          ? 'Pro Plan — Monthly'
                           : 'Single Report'}
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm text-foreground">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-foreground">
                         {formatAmount(payment.amount, payment.currency)}
                       </span>
                       {getStatusBadge(payment.status)}
@@ -280,16 +280,12 @@ export default function Billing() {
         </Card>
 
         {subscription && ['active', 'trialing'].includes(subscription.status) && (
-          <Card className="border-muted">
-            <CardContent className="py-4">
-              <p className="text-sm text-muted-foreground text-center">
-                Need help with billing? Contact our{' '}
-                <Button variant="link" className="p-0 h-auto" onClick={() => navigate('/support')}>
-                  support team
-                </Button>
-              </p>
-            </CardContent>
-          </Card>
+          <p className="text-xs text-muted-foreground text-center py-2">
+            Need help with billing? Contact our{' '}
+            <Button variant="link" className="p-0 h-auto text-xs" onClick={() => navigate('/support')}>
+              support team
+            </Button>
+          </p>
         )}
       </div>
     </DashboardLayout>
