@@ -15,7 +15,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -91,19 +91,23 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
         },
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(4px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
+        "fade-in": "fade-in 0.3s ease-out",
       },
       boxShadow: {
-        "elevation-1": "0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)",
-        "elevation-2": "0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04)",
-        "elevation-3": "0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.04)",
-        "elevation-1-hover": "0 2px 4px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04)",
-        "primary-glow": "0 4px 14px -2px rgba(249, 115, 22, 0.4), 0 2px 8px -2px rgba(249, 115, 22, 0.25)",
-        "primary-glow-hover": "0 8px 24px -4px rgba(249, 115, 22, 0.45), 0 4px 10px -2px rgba(249, 115, 22, 0.3)",
+        "elevation-1": "0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.03)",
+        "elevation-2": "0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.03)",
+        "elevation-3": "0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.03)",
+        "primary-glow": "0 4px 14px -2px rgba(249, 115, 22, 0.35), 0 2px 8px -2px rgba(249, 115, 22, 0.2)",
+        "primary-glow-hover": "0 8px 24px -4px rgba(249, 115, 22, 0.4), 0 4px 10px -2px rgba(249, 115, 22, 0.25)",
       },
       transitionDuration: {
         "150": "150ms",
