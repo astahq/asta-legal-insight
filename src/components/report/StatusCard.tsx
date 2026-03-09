@@ -20,21 +20,21 @@ export function StatusCard({
   return (
     <div
       className={cn(
-        "border border-slate-200 bg-slate-50 p-4 rounded-lg shadow-sm",
+        "border border-border/60 bg-muted/30 p-3.5 rounded-lg",
         className
       )}
     >
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 text-slate-400 [&>svg]:w-5 [&>svg]:h-5">
+      <div className="flex items-center gap-3">
+        <div className="flex-shrink-0 text-muted-foreground [&>svg]:w-4 [&>svg]:h-4">
           {icon}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             {label}
           </p>
-          <p className="text-sm text-slate-900 font-medium leading-relaxed">{value}</p>
+          <p className="text-sm text-foreground font-medium mt-0.5">{value}</p>
         </div>
-        <CheckCircle className="w-5 h-5 flex-shrink-0 text-slate-400" />
+        <CheckCircle className="w-4 h-4 flex-shrink-0 text-success/60" />
       </div>
     </div>
   );
