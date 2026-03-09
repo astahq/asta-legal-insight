@@ -4,95 +4,97 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 220 14% 10%;
+    --background: 30 5% 96%;
+    --foreground: 0 0% 9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 14% 10%;
+    --card-foreground: 0 0% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 14% 10%;
+    --popover-foreground: 0 0% 9%;
 
     --primary: 24 95% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 14% 10%;
+    --secondary: 30 5% 93%;
+    --secondary-foreground: 0 0% 9%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 30 5% 93%;
+    --muted-foreground: 0 0% 42%;
 
-    --accent: 220 14% 96%;
-    --accent-foreground: 220 14% 10%;
+    --accent: 30 5% 93%;
+    --accent-foreground: 0 0% 9%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 152 60% 42%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
     --warning-foreground: 38 95% 15%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    --border: 30 4% 88%;
+    --input: 30 4% 88%;
     --ring: 24 95% 53%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 14% 10%;
+    --sidebar-background: 220 12% 9%;
+    --sidebar-foreground: 0 0% 93%;
     --sidebar-primary: 24 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 14% 10%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-accent: 220 10% 14%;
+    --sidebar-accent-foreground: 0 0% 93%;
+    --sidebar-border: 220 10% 16%;
     --sidebar-ring: 24 95% 53%;
+    --sidebar-muted-foreground: 220 5% 50%;
   }
 
   .dark {
-    --background: 220 14% 10%;
-    --foreground: 0 0% 98%;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 95%;
 
-    --card: 220 14% 12%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 220 14% 12%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
 
     --primary: 24 95% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 18%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 220 14% 18%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 220 14% 18%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 95%;
 
     --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 98%;
 
-    --success: 142 71% 35%;
+    --success: 152 60% 35%;
     --success-foreground: 0 0% 100%;
-    
+
     --warning: 38 85% 55%;
     --warning-foreground: 38 95% 12%;
 
-    --border: 220 14% 20%;
-    --input: 220 14% 20%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
     --ring: 24 95% 53%;
 
-    --sidebar-background: 220 14% 10%;
-    --sidebar-foreground: 0 0% 98%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 92%;
     --sidebar-primary: 24 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 18%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 220 14% 20%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 92%;
+    --sidebar-border: 0 0% 14%;
     --sidebar-ring: 24 95% 53%;
+    --sidebar-muted-foreground: 0 0% 50%;
   }
 }
 
@@ -102,17 +104,17 @@
   }
 
   html {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'kern' 1;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     font-kerning: normal;
   }
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     line-height: 1.5;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -126,25 +128,18 @@
 
 @layer components {
   .stat-card {
-    @apply bg-card border border-border rounded-lg p-6 shadow-elevation-1 transition-all duration-200 ease-out;
-    @apply hover:shadow-elevation-2 hover:border-border/90;
+    @apply bg-card border border-border/60 rounded-xl p-5 shadow-sm;
   }
 
   .nav-item {
-    @apply flex items-center gap-3 px-4 py-2.5 text-muted-foreground rounded-lg transition-all duration-150 ease-out;
-    @apply hover:bg-accent hover:text-accent-foreground;
-    @apply active:scale-[0.995] active:bg-accent/90;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-[hsl(var(--sidebar-muted-foreground))] rounded-lg transition-all duration-150 ease-out;
+    @apply hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+    @apply active:scale-[0.995];
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar;
   }
 
   .nav-item-active {
-    @apply bg-accent text-foreground font-medium shadow-elevation-1;
-  }
-
-  .upload-zone {
-    @apply border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer transition-all duration-200 ease-out;
-    @apply hover:border-primary/50 hover:bg-primary/5 hover:shadow-elevation-1;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply bg-sidebar-accent text-sidebar-foreground font-medium;
   }
 
   .status-badge {
@@ -160,6 +155,6 @@
   }
 
   .table-header {
-    @apply text-xs font-medium text-muted-foreground uppercase tracking-wider;
+    @apply text-[11px] font-semibold text-muted-foreground uppercase tracking-wider;
   }
 }
