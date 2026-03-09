@@ -18,10 +18,10 @@ export function ChargesTable({ charges }: ChargesTableProps) {
   return (
     <>
       {charges.map((charge, index) => (
-        <tr key={index} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-          <td className="py-3 px-3 text-foreground font-medium">{charge.type}</td>
-          <td className="py-3 px-3 text-foreground">{charge.name || charge.description || "—"}</td>
-          <td className="py-3 px-3 text-foreground font-semibold">{charge.amount || "—"}</td>
+        <tr key={index} className="border-b border-border/20 last:border-0">
+          <td className="py-2.5 px-3 text-foreground/80 font-medium">{charge.type}</td>
+          <td className="py-2.5 px-3 text-foreground/65 leading-[1.6]">{charge.name || charge.description || "—"}</td>
+          <td className="py-2.5 px-3 text-foreground/80 font-medium whitespace-nowrap">{charge.amount || "—"}</td>
         </tr>
       ))}
     </>
