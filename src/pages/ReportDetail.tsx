@@ -98,7 +98,7 @@ const ReportDetail = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 w-full">
+      <div className="space-y-5 w-full">
         <PropertyHeader
           propertyAddress={propertyAddress}
           fullPropertyAddress={fullPropertyAddress}
@@ -125,12 +125,10 @@ const ReportDetail = () => {
 
         <PropertyDetails details={analysis?.propertyDetails} />
 
-        <div className="flex items-center gap-2 text-sm text-success bg-success/10 border border-success/20 px-4 py-3 rounded-lg">
-          <CheckCircle className="w-4 h-4 flex-shrink-0" />
-          <span className="font-medium">
-            Not legal advice - your smarter due-diligence co-pilot
-          </span>
-        </div>
+        <p className="text-[11px] text-muted-foreground/60 flex items-center gap-1.5">
+          <CheckCircle className="w-3 h-3 flex-shrink-0" />
+          Not legal advice — your smarter due-diligence co-pilot
+        </p>
 
         {!isDemo && (!analysis || currentReport?.status !== "completed") ? (
           <AnalysisStatus

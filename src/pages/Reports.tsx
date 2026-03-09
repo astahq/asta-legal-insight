@@ -25,7 +25,7 @@ function StatusBadge({ status }: { status: string }) {
     completed: { icon: CheckCircle2, class: "status-completed", label: "Completed" },
     failed: { icon: AlertCircle, class: "bg-destructive/10 text-destructive", label: "Failed" },
   };
-  
+
   const { icon: Icon, class: className, label } = config[status as keyof typeof config] || config.processing;
 
   return (
@@ -48,7 +48,7 @@ const Reports = () => {
         .from('reports')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       return data as Report[];
     },
@@ -60,7 +60,7 @@ const Reports = () => {
         .from('reports')
         .update({ on_watchlist: !on_watchlist })
         .eq('id', id);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -74,106 +74,112 @@ const Reports = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Reports</h1>
-            <p className="text-muted-foreground">View all your property analysis reports</p>
+            <h1 className="text-xl font-semibold text-foreground">Reports</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Your property analysis reports</p>
           </div>
-          <Button asChild>
+          <Button asChild size="sm">
             <Link to="/upload">New Analysis</Link>
           </Button>
         </div>
 
-        <div className="bg-card border border-border rounded-lg">
+        <div className="bg-card border border-border/50 rounded-2xl overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center p-12">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="table-header text-left p-4">Property Address</th>
-                    <th className="table-header text-left p-4">Date Submitted</th>
-                    <th className="table-header text-left p-4">Status</th>
-                    <th className="table-header text-left p-4">Watchlist</th>
-                    <th className="table-header text-left p-4">Actions</th>
+                  <tr className="border-b border-border/50">
+                    <th className="table-header text-left px-5 py-3">Property</th>
+                    <th className="table-header text-left px-5 py-3">Date</th>
+                    <th className="table-header text-left px-5 py-3">Status</th>
+                    <th className="table-header text-left px-5 py-3">Watchlist</th>
+                    <th className="table-header text-left px-5 py-3"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Demo Report Row */}
-                  <tr 
-                    className="border-b border-border hover:bg-muted/50 bg-primary/5 cursor-pointer"
+                  <tr
+                    className="border-b border-border/30 hover:bg-muted/40 cursor-pointer transition-colors"
                     onClick={() => navigate("/reports/demo")}
                   >
-                    <td className="p-4 text-sm text-foreground">
+                    <td className="px-5 py-3.5 text-sm text-foreground">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="truncate" title={demoReport.property_address}>
-                          {getDisplayAddress(demoReport.property_address, 80)}
+                          {getDisplayAddress(demoReport.property_address, 70)}
                         </span>
-                        <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20 flex-shrink-0">Demo</Badge>
+                        <Badge variant="outline" className="text-[10px] bg-primary/[0.06] text-primary border-primary/15 flex-shrink-0">Demo</Badge>
                       </div>
                     </td>
-                    <td className="p-4 text-sm text-muted-foreground">
-                      {format(new Date(demoReport.created_at), 'dd/MM/yyyy')}
+                    <td className="px-5 py-3.5 text-sm text-muted-foreground">
+                      {format(new Date(demoReport.created_at), 'dd MMM yyyy')}
                     </td>
-                    <td className="p-4">
+                    <td className="px-5 py-3.5">
                       <StatusBadge status={demoReport.status} />
                     </td>
-                    <td className="p-4">
-                      <Star className="w-4 h-4 text-muted-foreground" />
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center justify-center w-7 h-7">
+                        <Star className="w-4 h-4 text-border" />
+                      </div>
                     </td>
-                    <td className="p-4">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                    <td className="px-5 py-3.5 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={(e) => e.stopPropagation()}
                         asChild
+                        className="text-muted-foreground hover:text-foreground"
                       >
-                        <Link to="/reports/demo">View Report</Link>
+                        <Link to="/reports/demo">View</Link>
                       </Button>
                     </td>
                   </tr>
-                  {/* User Reports */}
-                  {reports?.map((report) => (
-                    <tr 
-                      key={report.id} 
-                      className="border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer"
+                  {reports?.map((report, i) => (
+                    <tr
+                      key={report.id}
+                      className={cn(
+                        "hover:bg-muted/40 cursor-pointer transition-colors",
+                        i !== (reports?.length ?? 0) - 1 && "border-b border-border/30"
+                      )}
                       onClick={() => navigate(`/reports/${report.id}`)}
                     >
-                      <td className="p-4 text-sm text-foreground">
+                      <td className="px-5 py-3.5 text-sm text-foreground">
                         <span className="truncate block" title={report.property_address}>
-                          {getDisplayAddress(report.property_address, 80)}
+                          {getDisplayAddress(report.property_address, 70)}
                         </span>
                       </td>
-                      <td className="p-4 text-sm text-muted-foreground">
-                        {format(new Date(report.created_at), 'dd/MM/yyyy')}
+                      <td className="px-5 py-3.5 text-sm text-muted-foreground">
+                        {format(new Date(report.created_at), 'dd MMM yyyy')}
                       </td>
-                      <td className="p-4">
+                      <td className="px-5 py-3.5">
                         <StatusBadge status={report.status} />
                       </td>
-                      <td className="p-4">
-                        <Button
-                          variant="ghost"
-                          size="icon"
+                      <td className="px-5 py-3.5">
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleWatchlist.mutate({ id: report.id, on_watchlist: report.on_watchlist });
                           }}
-                          className={cn(
-                            report.on_watchlist ? "text-warning" : "text-muted-foreground"
-                          )}
+                          className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-muted"
                         >
-                          <Star className={cn("w-4 h-4", report.on_watchlist && "fill-current")} />
-                        </Button>
+                          <Star className={cn(
+                            "w-4 h-4 transition-colors",
+                            report.on_watchlist
+                              ? "text-primary fill-primary"
+                              : "text-border hover:text-muted-foreground"
+                          )} />
+                        </button>
                       </td>
-                      <td className="p-4">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                      <td className="px-5 py-3.5 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={(e) => e.stopPropagation()}
                           asChild
+                          className="text-muted-foreground hover:text-foreground"
                         >
-                          <Link to={`/reports/${report.id}`}>View Report</Link>
+                          <Link to={`/reports/${report.id}`}>View</Link>
                         </Button>
                       </td>
                     </tr>
