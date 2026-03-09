@@ -54,13 +54,13 @@ const KeyFindingsCell = memo(function KeyFindingsCell({
   }, [onToggle]);
 
   if (!formatted || formatted === "—") {
-    return <td className="py-3 px-3 text-muted-foreground">—</td>;
+    return <td className="py-2.5 px-3 text-muted-foreground/55">—</td>;
   }
 
   return (
-    <td className="py-3 px-3">
-      <div className="space-y-1.5">
-        <div className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+    <td className="py-2.5 px-3">
+      <div className="space-y-1">
+        <div className="text-[13px] text-foreground/65 whitespace-pre-line leading-[1.6]">
           {displayLines.join("\n")}
           {!isExpanded && needsTruncation && remainingCount > 0 && (
             <span className="text-muted-foreground/70">
@@ -121,12 +121,12 @@ const DocumentRow = memo(function DocumentRow({
     <tr
       onClick={handleRowClick}
       className={cn(
-        "border-b border-border last:border-0 hover:bg-muted/30 transition-colors",
+        "border-b border-border/20 last:border-0",
         needsTruncation && "cursor-pointer"
       )}
     >
-      <td className="py-3 px-3 text-foreground font-medium">{document.name}</td>
-      <td className="py-3 px-3 text-foreground">{document.pages || 0}</td>
+      <td className="py-2.5 px-3 text-foreground/80 font-medium">{document.name}</td>
+      <td className="py-2.5 px-3 text-foreground/65">{document.pages || 0}</td>
       <KeyFindingsCell 
         findings={document.keyFindings || ""} 
         isExpanded={isExpanded}
