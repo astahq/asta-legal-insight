@@ -1,8 +1,11 @@
+import { cn } from "@/lib/utils";
+
 interface ReportSectionProps {
   title: string;
   children: React.ReactNode;
   rightContent?: React.ReactNode;
   issueCount?: number;
+  sectionNumber?: number;
 }
 
 export function ReportSection({
@@ -10,21 +13,32 @@ export function ReportSection({
   children,
   rightContent,
   issueCount,
+  sectionNumber,
 }: ReportSectionProps) {
   return (
-    <div className="py-6 border-b border-border last:border-b-0 last:pb-0">
+    <div className="py-6 border-b border-border/30 last:border-b-0 last:pb-0 first:pt-2">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-semibold text-slate-900 tracking-wide relative inline-block">
-          <span className="relative z-10">{title}</span>
-          <span className="absolute bottom-0 left-0 right-0 h-[0.8px] bg-neutral-400/40 -z-0"></span>
-        </h3>
-        {rightContent}
+        <div className="flex items-center gap-2.5">
+          {sectionNumber !== undefined && (
+            <span className="text-[10px] font-medium text-muted-foreground/45 tabular-nums">
+              {String(sectionNumber).padStart(2, "0")}
+            </span>
+          )}
+          <h3 className="text-[13px] font-semibold text-foreground/90 uppercase tracking-wider">
+            {title}
+          </h3>
+          {issueCount !== undefined && issueCount > 0 && (
+            <span className="text-[11px] text-muted-foreground/55 tabular-nums">
+              ({issueCount})
+            </span>
+          )}
+        </div>
+        {rightContent && (
+          <div className="flex items-center">
+            {rightContent}
+          </div>
+        )}
       </div>
-      {issueCount !== undefined && issueCount > 0 && (
-        <p className="text-sm font-medium text-muted-foreground mb-4">
-          {issueCount} potential issue{issueCount !== 1 ? "s" : ""} found
-        </p>
-      )}
       <div>{children}</div>
     </div>
   );
