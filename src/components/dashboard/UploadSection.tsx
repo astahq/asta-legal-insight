@@ -12,7 +12,6 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { firecrawlApi } from "@/lib/api/firecrawl";
 import { supabase } from "@/integrations/supabase/client";
@@ -567,7 +566,7 @@ export function UploadSection() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {(isPaidPlan || isTrialActive) &&
         hasUsageLimits &&
         usage &&
@@ -589,144 +588,153 @@ export function UploadSection() {
               : "text-primary";
 
           return (
-            <div className="bg-card rounded-xl border border-border shadow-sm px-5 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-5">
-                  <div className="relative flex-shrink-0">
-                    <svg
-                      width="72"
-                      height="72"
-                      viewBox="0 0 72 72"
-                      className="-rotate-90"
-                    >
-                      <circle
-                        cx="36"
-                        cy="36"
-                        r={radius}
-                        fill="none"
-                        strokeWidth="7"
-                        className="stroke-muted"
-                      />
-                      <circle
-                        cx="36"
-                        cy="36"
-                        r={radius}
-                        fill="none"
-                        strokeWidth="7"
-                        strokeLinecap="round"
-                        className={cn(
-                          progressColor,
-                          "transition-all duration-700 ease-out",
-                        )}
-                        strokeDasharray={circumference}
-                        strokeDashoffset={strokeDashoffset}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className={cn("text-xl font-bold", accentColor)}>
-                        {usage.remaining}
-                      </span>
-                      <span className="text-[9px] text-muted-foreground">
-                        left
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      {isTrialActive ? "Free Trial" : "Monthly Usage"}
-                      {isTrialActive && trial && (
-                        <span
+            <div className={cn(
+              "rounded-2xl border shadow-sm overflow-hidden",
+              isAtLimit ? "border-destructive/30 bg-destructive/[0.03]" : "border-border/50 bg-card"
+            )}>
+              <div className="px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="relative flex-shrink-0">
+                      <svg
+                        width="64"
+                        height="64"
+                        viewBox="0 0 72 72"
+                        className="-rotate-90"
+                      >
+                        <circle
+                          cx="36"
+                          cy="36"
+                          r={radius}
+                          fill="none"
+                          strokeWidth="6"
+                          className="stroke-muted/60"
+                        />
+                        <circle
+                          cx="36"
+                          cy="36"
+                          r={radius}
+                          fill="none"
+                          strokeWidth="6"
+                          strokeLinecap="round"
                           className={cn(
-                            "text-[10px] font-medium px-1.5 py-0.5 rounded",
-                            trial.daysRemaining <= 3
-                              ? "bg-warning/10 text-warning"
-                              : "bg-primary/10 text-primary",
+                            progressColor,
+                            "transition-all duration-700 ease-out",
                           )}
-                        >
-                          {trial.daysRemaining}d
+                          strokeDasharray={circumference}
+                          strokeDashoffset={strokeDashoffset}
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className={cn("text-lg font-bold leading-none", accentColor)}>
+                          {usage.remaining}
                         </span>
-                      )}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {usage.used} of {usage.limit} reports used
-                    </p>
+                        <span className="text-[8px] text-muted-foreground mt-0.5">
+                          left
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        {isTrialActive ? "Free Trial" : "Monthly Usage"}
+                        {isTrialActive && trial && (
+                          <span
+                            className={cn(
+                              "text-[10px] font-medium px-1.5 py-0.5 rounded-full",
+                              trial.daysRemaining <= 3
+                                ? "bg-warning/10 text-warning"
+                                : "bg-primary/10 text-primary",
+                            )}
+                          >
+                            {trial.daysRemaining}d left
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {usage.used} of {usage.limit} reports used
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-5">
+                    <div className="hidden sm:flex items-center gap-5">
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-foreground leading-none">
+                          {usage.used}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">
+                          Used
+                        </div>
+                      </div>
+                      <div className="w-px h-8 bg-border/60" />
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-foreground leading-none">
+                          {usage.limit}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">
+                          Limit
+                        </div>
+                      </div>
+                    </div>
+
+                    {isAtLimit ? (
+                      <Button asChild size="sm" variant="primary">
+                        <Link to="/pricing">
+                          Upgrade
+                          <ChevronRight className="w-4 h-4 ml-1" />
+                        </Link>
+                      </Button>
+                    ) : usage.percentUsed >= 80 ? (
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/pricing">View Plans</Link>
+                      </Button>
+                    ) : isTrialActive && trial && trial.daysRemaining <= 7 ? (
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/pricing">View Plans</Link>
+                      </Button>
+                    ) : (
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="ghost"
+                        className="text-muted-foreground"
+                      >
+                        <Link to="/pricing">View Plans</Link>
+                      </Button>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-6">
-                  <div className="hidden sm:flex items-center gap-6">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-foreground">
-                        {usage.used}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                        Used
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-foreground">
-                        {usage.limit}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                        Limit
-                      </div>
-                    </div>
-                  </div>
-
-                  {isAtLimit ? (
-                    <Button asChild size="sm">
-                      <Link to="/pricing">
-                        Upgrade
-                        <ChevronRight className="w-4 h-4 ml-1" />
-                      </Link>
-                    </Button>
-                  ) : usage.percentUsed >= 80 ? (
-                    <Button asChild size="sm" variant="outline">
-                      <Link to="/pricing">View Plans</Link>
-                    </Button>
-                  ) : isTrialActive && trial && trial.daysRemaining <= 7 ? (
-                    <Button asChild size="sm" variant="outline">
-                      <Link to="/pricing">View Plans</Link>
-                    </Button>
-                  ) : (
-                    <Button
-                      asChild
-                      size="sm"
-                      variant="ghost"
-                      className="text-muted-foreground"
-                    >
-                      <Link to="/pricing">View Plans</Link>
-                    </Button>
+              </div>
+              <div className="h-1 bg-muted/40">
+                <div
+                  className={cn(
+                    "h-full transition-all duration-700 ease-out rounded-r-full",
+                    isAtLimit ? "bg-destructive" : usage.percentUsed >= 80 ? "bg-warning" : "bg-primary"
                   )}
-                </div>
+                  style={{ width: `${Math.min(usage.percentUsed, 100)}%` }}
+                />
               </div>
             </div>
           );
         })()}
 
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-2">
-          Upload Your Legal Pack <span className="text-destructive">*</span>
-        </h3>
-        <p className="text-sm text-muted-foreground mb-4 max-w-full">
-          Our AI has been trained on thousands of legal packs and property
-          auction documents. It can identify issues that even experienced
-          lawyers might miss, and it does it in minutes instead of hours. The
-          reports are comprehensive, easy to understand, and highlight all
-          potential risks.
-        </p>
-
-        {/* Disclaimer */}
-        <div className="flex items-center gap-2 mb-4 text-sm text-success">
-          <Info className="w-4 h-4 flex-shrink-0" />
-          <span>Not legal advice - your smarter due-diligence co-pilot</span>
+      <div className="bg-card border border-border/50 rounded-2xl p-5">
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+            Upload Legal Pack
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            AI-powered analysis of property auction documents.
+          </p>
         </div>
 
         <div
           className={cn(
-            "upload-zone min-h-[200px]",
-            isDragging && "border-primary bg-primary/5",
+            "relative group rounded-xl border border-dashed p-5 text-center cursor-pointer transition-all duration-200",
+            isDragging
+              ? "border-primary bg-primary/[0.04]"
+              : "border-border hover:border-primary/40",
             validationErrors.files && "border-destructive",
           )}
           onDragOver={handleDragOver}
@@ -743,15 +751,21 @@ export function UploadSection() {
             onChange={handleFileSelect}
           />
           <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-              <Upload className="w-5 h-5 text-muted-foreground" />
+            <div className={cn(
+              "w-10 h-10 rounded-xl bg-muted flex items-center justify-center transition-colors",
+              isDragging && "bg-primary/10"
+            )}>
+              <Upload className={cn(
+                "w-4.5 h-4.5 transition-colors",
+                isDragging ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+              )} />
             </div>
-            <div className="text-center">
-              <p className="text-muted-foreground">
-                Drag and drop files here, or click to browse
+            <div className="space-y-1">
+              <p className="text-sm text-foreground">
+                Drop files or <span className="text-primary font-medium">browse</span>
               </p>
-              <p className="text-sm text-muted-foreground/70 mt-1">
-                Supports PDF, DOCX, TXT up to {MAX_FILE_SIZE_MB}MB per file
+              <p className="text-xs text-muted-foreground">
+                PDF, DOCX, TXT up to {MAX_FILE_SIZE_MB}MB
               </p>
             </div>
           </div>
@@ -759,8 +773,8 @@ export function UploadSection() {
 
         {uploadedFiles.length > 0 && (
           <div className="mt-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">
-              Uploaded files:
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Uploaded files
             </p>
             {uploadedFiles.map((file, index) => (
               <FileItem
@@ -780,15 +794,11 @@ export function UploadSection() {
         )}
       </div>
 
-      <div className="bg-card border border-border rounded-lg p-4">
-        <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-8">
+      <div className="bg-card border border-border/50 rounded-2xl p-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
           <div className="flex-shrink-0">
-            <h4 className="font-medium text-foreground">Property URL</h4>
-            <p className="text-sm text-muted-foreground mt-1">
-              Adding a property URL allows us to
-              <br className="hidden md:block" />
-              extract additional property information.
-            </p>
+            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Property URL</h4>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Optional — extracts property info</p>
           </div>
           <div className="flex-1 min-w-0 space-y-2">
             {isEditingUrl ? (
@@ -841,28 +851,30 @@ export function UploadSection() {
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="watchlist"
-          checked={addToWatchlist}
-          onCheckedChange={handleWatchlistChange}
-        />
-        <label
-          htmlFor="watchlist"
-          className="text-sm font-medium text-foreground cursor-pointer flex items-center gap-2"
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => handleWatchlistChange(!addToWatchlist)}
+          className={cn(
+            "flex items-center gap-2 px-3.5 py-2 rounded-lg border text-[13px] font-medium transition-colors",
+            addToWatchlist
+              ? "border-primary/20 bg-primary/[0.04] text-primary"
+              : "border-border bg-card text-muted-foreground hover:text-foreground"
+          )}
         >
-          <Star className="w-4 h-4 text-warning" />
-          Add to Watchlist
-        </label>
-      </div>
+          <Star className={cn("w-3.5 h-3.5", addToWatchlist && "fill-primary")} />
+          {addToWatchlist ? "Watchlisted" : "Watchlist"}
+        </button>
 
-      <Button
-        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-base font-medium"
-        onClick={handleAnalyse}
-        disabled={isButtonDisabled}
-      >
-        {buttonContent}
-      </Button>
+        <Button
+          variant="primary"
+          className="flex-1 h-11"
+          onClick={handleAnalyse}
+          disabled={isButtonDisabled}
+        >
+          {buttonContent}
+        </Button>
+      </div>
 
       <PaymentRequiredModal
         open={showPaymentModal}
