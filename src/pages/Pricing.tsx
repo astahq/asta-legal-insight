@@ -142,21 +142,20 @@ export default function Pricing() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto space-y-12">
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold">Simple, Transparent Pricing</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Start with a free trial - no credit card required. Then choose the plan that
-            works best for your practice. Unlimited property analysis for a flat monthly fee.
+      <div className="max-w-4xl mx-auto space-y-10">
+        <div className="text-center space-y-3">
+          <h1 className="text-2xl font-bold tracking-tight">Simple, Transparent Pricing</h1>
+          <p className="text-sm text-muted-foreground max-w-lg mx-auto">
+            Start with a free trial — no credit card required. Choose the plan that fits your practice.
           </p>
         </div>
 
         {plansLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
             <PricingCard
               title={starterPlan?.name || 'Starter'}
               description={starterPlan?.description || 'Perfect for growing practices'}
@@ -164,8 +163,8 @@ export default function Pricing() {
               period="month"
               features={starterFeatures}
               buttonText={
-                isPaidPlan && access?.planId === 'starter' 
-                  ? 'Current Plan' 
+                isPaidPlan && access?.planId === 'starter'
+                  ? 'Current Plan'
                   : isPaidPlan && access?.planId === 'professional'
                     ? 'Contact Support'
                     : 'Subscribe Now'
@@ -184,8 +183,8 @@ export default function Pricing() {
               features={professionalFeatures}
               isPopular={!isPaidPlan || access?.planId !== 'professional'}
               buttonText={
-                isPaidPlan && access?.planId === 'professional' 
-                  ? 'Current Plan' 
+                isPaidPlan && access?.planId === 'professional'
+                  ? 'Current Plan'
                   : isPaidPlan && access?.planId === 'starter'
                     ? 'Upgrade'
                     : 'Subscribe Now'
@@ -198,9 +197,9 @@ export default function Pricing() {
           </div>
         )}
 
-        <div className="bg-muted/30 rounded-xl p-8">
-          <h3 className="text-lg font-semibold mb-4">All plans include:</h3>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-muted-foreground">All plans include</h3>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
               'Monthly usage reset on billing date',
               'Comprehensive legal review',
@@ -209,44 +208,46 @@ export default function Pricing() {
               'Document chat assistant',
               'Secure data handling'
             ].map((feature, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-success flex-shrink-0" />
-                <span className="text-sm">{feature}</span>
+              <div key={i} className="flex items-center gap-2.5">
+                <div className="w-5 h-5 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-success" />
+                </div>
+                <span className="text-sm text-foreground">{feature}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-primary/5 rounded-xl p-8 text-center">
-          <h3 className="text-lg font-semibold mb-2">Start Your Free Trial</h3>
-          <p className="text-muted-foreground mb-4">
+        <div className="bg-gradient-to-br from-primary/[0.06] to-primary/[0.02] border border-primary/10 rounded-2xl p-6 text-center">
+          <h3 className="text-base font-semibold mb-1.5">Start Your Free Trial</h3>
+          <p className="text-sm text-muted-foreground mb-4">
             Get 3 free property reports over 14 days. No credit card required.
           </p>
-          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-success" /> No credit card
+          <div className="flex items-center justify-center gap-5 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <Check className="w-4 h-4 text-primary" /> No credit card
             </span>
-            <span className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-success" /> 3 free reports
+            <span className="flex items-center gap-1.5">
+              <Check className="w-4 h-4 text-primary" /> 3 free reports
             </span>
-            <span className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-success" /> Full access
+            <span className="flex items-center gap-1.5">
+              <Check className="w-4 h-4 text-primary" /> Full access
             </span>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-muted-foreground" />
-            <h2 className="text-xl font-semibold">Frequently Asked Questions</h2>
-          </div>
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <HelpCircle className="w-4 h-4" />
+            Frequently Asked Questions
+          </h2>
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
               <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left">
+                <AccordionTrigger className="text-left text-sm">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent className="text-sm text-muted-foreground">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
