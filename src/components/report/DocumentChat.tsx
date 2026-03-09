@@ -354,7 +354,6 @@ export function DocumentChat({ reportId, propertyAddress, isDemo = false, isAnal
     if (isDemo) {
       return (
         <ButtonGroupText
-          asChild
           className={cn(
             buttonClassName ? "!rounded-r-none border-r-0 hover:!rounded-r-none focus-visible:!rounded-r-none" : "rounded-lg",
             "px-4 h-10 transition-colors duration-150 hover:bg-neutral-200",
