@@ -122,7 +122,7 @@ export function PaymentRequiredModal({
                   Priority support
                 </li>
               </ul>
-              <Button onClick={() => handleSelectPlan('professional')} className="w-full">
+              <Button onClick={() => handleSelectPlan('professional')} className="w-full" variant="primary">
                 Upgrade Now
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -194,6 +194,7 @@ export function PaymentRequiredModal({
                 <Button
                   onClick={() => handleSelectPlan('professional')}
                   className="w-full"
+                  variant="primary"
                 >
                   Choose Professional
                   <ArrowRight className="w-4 h-4 ml-2" />
