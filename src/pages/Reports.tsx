@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, getDisplayAddress } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { demoReport } from "@/lib/demoReportData";
 
@@ -38,20 +39,24 @@ function StatusBadge({ status }: { status: string }) {
 
 const Reports = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const { data: reports, isLoading } = useQuery({
-    queryKey: ['reports'],
+    queryKey: ['reports', user?.id],
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from('reports')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as Report[];
     },
+    enabled: !!user,
   });
 
   const toggleWatchlist = useMutation({

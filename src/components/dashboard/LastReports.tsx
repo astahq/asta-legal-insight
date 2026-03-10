@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, AlertCircle, Loader2, ArrowRight } from "lucide-re
 import { Link, useNavigate } from "react-router-dom";
 import { cn, getDisplayAddress } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 
@@ -32,18 +33,22 @@ function StatusDot({ status }: { status: string }) {
 
 export function LastReports() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: reports, isLoading } = useQuery({
-    queryKey: ['last-reports'],
+    queryKey: ['last-reports', user?.id],
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from('reports')
         .select('id, property_address, status, created_at')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(6);
 
       if (error) throw error;
       return data as Report[];
     },
+    enabled: !!user,
   });
 
   return (
