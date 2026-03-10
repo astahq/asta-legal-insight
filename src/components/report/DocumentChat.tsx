@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, memo } from "react";
+import { useState, useRef, useCallback, memo, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
   MessageCircle,
@@ -300,32 +300,39 @@ export function DocumentChat({
   const inputRef = useRef<HTMLInputElement>(null);
   const fullscreenInputRef = useRef<HTMLInputElement>(null);
 
+  const transport = useMemo(
+    () =>
+      new TextStreamChatTransport({
+        api: CHAT_URL,
+        headers: {
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: { reportId },
+        prepareSendMessagesRequest: ({ messages }) => {
+          const formattedMessages = messages.map((msg) => {
+            const textParts =
+              msg.parts?.filter((part) => part.type === "text") || [];
+            const content = textParts.map((part) => part.text).join("");
+            return {
+              role: msg.role,
+              content,
+            };
+          });
+          return {
+            body: {
+              messages: formattedMessages,
+              reportId,
+            },
+          };
+        },
+      }),
+    [reportId],
+  );
+
   const { messages, sendMessage, status } = useChat({
     id: `document-chat-${reportId}`,
-    transport: new TextStreamChatTransport({
-      api: CHAT_URL,
-      headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        "Content-Type": "application/json",
-      },
-      prepareSendMessagesRequest: ({ messages }) => {
-        const formattedMessages = messages.map((msg) => {
-          const textParts =
-            msg.parts?.filter((part) => part.type === "text") || [];
-          const content = textParts.map((part) => part.text).join("");
-          return {
-            role: msg.role,
-            content,
-          };
-        });
-        return {
-          body: {
-            messages: formattedMessages,
-            reportId,
-          },
-        };
-      },
-    }),
+    transport,
     onError: (error) => {
       toast.error(error.message || "Failed to send message, please try again.");
     },
