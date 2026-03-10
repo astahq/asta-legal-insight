@@ -1,6 +1,19 @@
+import { ReactNode } from "react";
 import { PropertyDetails as PropertyDetailsType } from "@/lib/demoReportData";
 import { Card, CardContent } from "@/components/ui/card";
 import ReactMarkdown from "react-markdown";
+import {
+  Home,
+  BedDouble,
+  Bath,
+  Maximize,
+  Zap,
+  Hash,
+  Building2,
+  Receipt,
+  CreditCard,
+  Settings,
+} from "lucide-react";
 
 interface PropertyDetailsProps {
   details?: PropertyDetailsType | undefined;
@@ -40,18 +53,18 @@ export function PropertyDetails({ details }: PropertyDetailsProps) {
           </div>
         )}
 
-        {/* Details grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-5">
-          <DetailItem label="Property Type" value={details.propertyType} isUnknown />
-          <DetailItem label="Bedrooms" value={details.bedrooms} />
-          <DetailItem label="Bathrooms" value={details.bathrooms ?? 1} />
-          <DetailItem label="Size" value={details.size} isUnknown />
-          <DetailItem label="EPC Rating" value={details.epcRating} />
-          <DetailItem label="Catalog No." value={details.catalogNumber} />
-          <DetailItem label="Lot Type" value={details.lotType} />
-          <DetailItem label="Council Tax" value={details.councilTax} />
-          <DetailItem label="Buyers' Charge" value={details.buyersCharge} />
-          <DetailItem label="Admin Charge" value={details.administrationChargeBand} />
+        {/* Details grid with icons */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+          <DetailItem label="Property Type" value={details.propertyType} isUnknown icon={<Home className="w-3.5 h-3.5" />} />
+          <DetailItem label="Bedrooms" value={details.bedrooms} icon={<BedDouble className="w-3.5 h-3.5" />} />
+          <DetailItem label="Bathrooms" value={details.bathrooms ?? 1} icon={<Bath className="w-3.5 h-3.5" />} />
+          <DetailItem label="Size" value={details.size} isUnknown icon={<Maximize className="w-3.5 h-3.5" />} />
+          <DetailItem label="EPC Rating" value={details.epcRating} icon={<Zap className="w-3.5 h-3.5" />} />
+          <DetailItem label="Catalog No." value={details.catalogNumber} icon={<Hash className="w-3.5 h-3.5" />} />
+          <DetailItem label="Lot Type" value={details.lotType} icon={<Building2 className="w-3.5 h-3.5" />} />
+          <DetailItem label="Council Tax" value={details.councilTax} icon={<Receipt className="w-3.5 h-3.5" />} />
+          <DetailItem label="Buyers' Charge" value={details.buyersCharge} icon={<CreditCard className="w-3.5 h-3.5" />} />
+          <DetailItem label="Admin Charge" value={details.administrationChargeBand} icon={<Settings className="w-3.5 h-3.5" />} />
         </div>
 
         {details.description && (
@@ -81,10 +94,12 @@ function DetailItem({
   label,
   value,
   isUnknown = false,
+  icon,
 }: {
   label: string;
   value: string | number | undefined | null;
   isUnknown?: boolean;
+  icon?: ReactNode;
 }) {
   const displayValue =
     value === undefined ||
@@ -95,11 +110,18 @@ function DetailItem({
       : value;
 
   return (
-    <div>
-      <p className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">
-        {label}
-      </p>
-      <p className="text-[14px] font-medium text-foreground/80 mt-0.5">{displayValue}</p>
+    <div className="flex items-start gap-2.5 rounded-lg border border-border/30 bg-muted/15 px-3 py-2.5">
+      {icon && (
+        <div className="flex items-center justify-center w-7 h-7 rounded-md bg-foreground/5 text-muted-foreground/60 flex-shrink-0 mt-0.5">
+          {icon}
+        </div>
+      )}
+      <div className="min-w-0">
+        <p className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">
+          {label}
+        </p>
+        <p className="text-[13px] font-medium text-foreground/80 mt-0.5 truncate">{displayValue}</p>
+      </div>
     </div>
   );
 }
