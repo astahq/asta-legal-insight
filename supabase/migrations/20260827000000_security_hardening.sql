@@ -125,14 +125,14 @@ BEGIN
     now(),
     now() + COALESCE(v_trial_plan.trial_days, 14) * INTERVAL '1 day',
     0,
-    COALESCE(v_trial_plan.trial_credits, 3),
+    COALESCE(v_trial_plan.usage_limit, 3),
     'trial'
   )
   ON CONFLICT (id) DO UPDATE SET
     trial_started_at = COALESCE(customers.trial_started_at, now()),
     trial_ends_at = COALESCE(customers.trial_ends_at, now() + COALESCE(v_trial_plan.trial_days, 14) * INTERVAL '1 day'),
     trial_usage_count = COALESCE(customers.trial_usage_count, 0),
-    trial_usage_limit = COALESCE(customers.trial_usage_limit, COALESCE(v_trial_plan.trial_credits, 3)),
+    trial_usage_limit = COALESCE(customers.trial_usage_limit, COALESCE(v_trial_plan.usage_limit, 3)),
     current_plan_id = COALESCE(customers.current_plan_id, 'trial'),
     updated_at = now();
 END;
@@ -180,7 +180,7 @@ DECLARE
 BEGIN
   PERFORM assert_self_or_service(p_user_id);
 
-  SELECT s.*, p.reports_per_month
+  SELECT s.*, p.usage_limit AS plan_usage_limit
   INTO v_sub
   FROM subscriptions s
   LEFT JOIN plans p ON s.plan_id = p.id
@@ -195,8 +195,8 @@ BEGIN
 
   IF v_sub.usage_limit IS NOT NULL THEN
     v_usage_limit := v_sub.usage_limit;
-  ELSIF v_sub.reports_per_month IS NOT NULL AND v_sub.reports_per_month > 0 THEN
-    v_usage_limit := v_sub.reports_per_month;
+  ELSIF v_sub.plan_usage_limit IS NOT NULL THEN
+    v_usage_limit := v_sub.plan_usage_limit;
   ELSE
     UPDATE reports SET payment_status = 'paid' WHERE id = p_report_id;
     RETURN TRUE;
