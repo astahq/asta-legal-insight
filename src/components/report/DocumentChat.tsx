@@ -18,6 +18,7 @@ import { usePostHog } from "posthog-js/react";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
 import ReactMarkdown from "react-markdown";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DocumentChatProps {
   reportId: string;
@@ -293,6 +294,7 @@ export function DocumentChat({
   buttonClassName,
 }: DocumentChatProps) {
   const posthog = usePostHog();
+  const { session } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -305,7 +307,7 @@ export function DocumentChat({
       new TextStreamChatTransport({
         api: CHAT_URL,
         headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session?.access_token ?? ""}`,
           "Content-Type": "application/json",
         },
         body: { reportId },
@@ -327,7 +329,7 @@ export function DocumentChat({
           };
         },
       }),
-    [reportId],
+    [reportId, session?.access_token],
   );
 
   const { messages, sendMessage, status } = useChat({

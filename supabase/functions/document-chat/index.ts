@@ -173,6 +173,20 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     console.log(`Document chat request for report: ${reportId}`);
 
     // deno-lint-ignore no-explicit-any
@@ -242,6 +256,7 @@ serve(async (req) => {
         .from("reports")
         .select("property_address, scraped_data, analysis_result")
         .eq("id", reportId)
+        .eq("user_id", user.id)
         .single();
 
       if (reportError) {

@@ -5,6 +5,14 @@ const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL");
 
 serve(async (req) => {
   try {
+    // Optional shared-secret gate: set WELCOME_EMAIL_HOOK_SECRET with
+    // `supabase secrets set` and send the same value in an `x-hook-secret`
+    // header from the caller. Until the secret is set, behavior is unchanged.
+    const hookSecret = Deno.env.get("WELCOME_EMAIL_HOOK_SECRET");
+    if (hookSecret && req.headers.get("x-hook-secret") !== hookSecret) {
+      return new Response("unauthorized", { status: 401 });
+    }
+
     const { type, email, action_link } = await req.json();
 
     if (type !== "signup") {

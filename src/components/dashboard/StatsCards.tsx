@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Building2, FileText, CheckCircle2, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ function StatCard({ label, value, loading, icon, accent = "text-foreground", acc
 }
 
 export function StatsCards() {
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     propertiesAnalysed: 0,
     documentsAnalysed: 0,
@@ -41,11 +43,14 @@ export function StatsCards() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
+
     async function fetchStats() {
       try {
         const { data, error } = await supabase
           .from("reports")
-          .select("id, documents_count, status");
+          .select("id, documents_count, status")
+          .eq("user_id", user!.id);
 
         if (error) throw error;
 
@@ -63,7 +68,7 @@ export function StatsCards() {
     }
 
     fetchStats();
-  }, []);
+  }, [user]);
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

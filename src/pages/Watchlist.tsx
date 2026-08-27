@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn, getDisplayAddress } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 
 interface Report {
@@ -39,16 +40,19 @@ const Watchlist = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const { data: reports, isLoading } = useQuery({
-    queryKey: ['watchlist'],
+    queryKey: ['watchlist', user?.id],
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('reports')
         .select('*')
+        .eq('user_id', user!.id)
         .eq('on_watchlist', true)
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       return data as Report[];
     },
@@ -56,6 +60,8 @@ const Watchlist = () => {
 
   // Subscribe to real-time updates
   useEffect(() => {
+    if (!user) return;
+
     const channel = supabase
       .channel('watchlist-changes')
       .on(
@@ -64,6 +70,7 @@ const Watchlist = () => {
           event: '*',
           schema: 'public',
           table: 'reports',
+          filter: `user_id=eq.${user.id}`,
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['watchlist'] });
@@ -75,7 +82,7 @@ const Watchlist = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, user]);
 
   const removeFromWatchlist = useMutation({
     mutationFn: async (id: string) => {

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { processLegalPack } from "@/lib/api/legalPackProcessor";
 
@@ -11,17 +12,14 @@ export function useReport(id: string | undefined, isDemo: boolean, shareToken?: 
       if (!id) return null;
       
       if (shareToken) {
-        const { data, error } = await supabase
-          .from("reports")
-          .select("*")
-          .eq("id", id)
-          .filter("share_token", "eq", shareToken)
-          .filter("is_public", "eq", true)
-          .maybeSingle();
+        const { data, error } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: Error | null }>)("get_shared_report", {
+          p_report_id: id,
+          p_share_token: shareToken,
+        });
         if (error) throw error;
-        return data;
+        return (data ?? null) as Tables<"reports"> | null;
       }
-      
+
       const { data, error } = await supabase
         .from("reports")
         .select("*")
@@ -100,13 +98,14 @@ export function useRetryAnalysis(id: string | undefined, isDemo: boolean, userId
       if (isDemo || !id) throw new Error("Report ID required");
       if (!userId) throw new Error("Please sign in to retry analysis");
 
+      const { error } = await supabase.from("reports").update({ status: "processing" }).eq("id", id);
+      if (error) throw error;
+
       await processLegalPack({
         reportId: id,
         userId,
         url: reportUrl,
       });
-
-      await supabase.from("reports").update({ status: "processing" }).eq("id", id);
     },
     onSuccess: () => {
       toast({
@@ -137,8 +136,7 @@ export function useToggleShare(id: string | undefined, isDemo: boolean, currentI
       if (!user) throw new Error("Please sign in to share reports");
       
       const { data, error } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: Error | null }>)('toggle_report_sharing', {
-        p_report_id: id,
-        p_user_id: user.id
+        p_report_id: id
       });
 
       if (error) throw error;

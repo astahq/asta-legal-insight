@@ -1,7 +1,14 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "asta-legal-insight",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Dashboard for Asta — property auction legal pack analysis",
+  "author": "Onurhan Demir",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/astahq/asta-legal-insight.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

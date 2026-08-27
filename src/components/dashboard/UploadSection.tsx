@@ -148,7 +148,6 @@ export function UploadSection() {
     propertyUrl?: string;
   }>({});
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [pendingReportId, setPendingReportId] = useState<string | null>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -324,7 +323,7 @@ export function UploadSection() {
     }
   };
 
-  const isButtonDisabled = isSubmitting || !isFormValid;
+  const isButtonDisabled = isSubmitting || !isFormValid();
 
   const buttonContent = useMemo(
     () =>
@@ -879,7 +878,6 @@ export function UploadSection() {
       <PaymentRequiredModal
         open={showPaymentModal}
         onOpenChange={setShowPaymentModal}
-        reportId={pendingReportId || undefined}
       />
     </div>
   );

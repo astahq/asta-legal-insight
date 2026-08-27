@@ -1,16 +1,15 @@
 project_id = "sjxzrafoatofdvifaqyg"
 
 [functions.firecrawl-scrape]
-verify_jwt = false
+verify_jwt = true
 
 [functions.document-chat]
-verify_jwt = false
-
-[functions.process-legal-pack]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-email]
-verify_jwt = false
+verify_jwt = true
 
+# Called by an external hook without a Supabase JWT; protected instead by the
+# optional WELCOME_EMAIL_HOOK_SECRET check inside the function.
 [functions.send-welcome-email]
 verify_jwt = false

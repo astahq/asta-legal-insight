@@ -40,14 +40,17 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         .eq('id', user.id)
         .single();
 
+      if (error) {
+        console.error('Error fetching profile', error);
+      }
 
       setProfile({
         full_name: data?.full_name || user.user_metadata?.full_name || null,
         avatar_url: data?.avatar_url || null,
         email: data?.email || user.email || null,
       });
-    } catch {
-        console.error('Error fetching profile');
+    } catch (err) {
+      console.error('Error fetching profile', err);
     } finally {
       setLoading(false);
     }

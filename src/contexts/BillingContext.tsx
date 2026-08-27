@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useSyncExternalStore, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useSyncExternalStore, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { checkTrialActive, calculateDaysRemaining } from '@/lib/utils/dateUtils';
@@ -125,8 +125,17 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     getServerVisibilitySnapshot
   );
 
+  // Token lives in a ref so fetchWithAuth (and everything depending on it)
+  // keeps a stable identity across token refreshes — otherwise every refresh
+  // re-runs the status/realtime effects.
+  const accessTokenRef = useRef(session?.access_token);
+  useEffect(() => {
+    accessTokenRef.current = session?.access_token;
+  }, [session?.access_token]);
+
   const fetchWithAuth = useCallback(async (endpoint: string, options: RequestInit = {}) => {
-    if (!session?.access_token) {
+    const accessToken = accessTokenRef.current;
+    if (!accessToken) {
       throw new Error('No authentication token available');
     }
 
@@ -134,7 +143,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${accessToken}`,
         ...options.headers,
       },
     });
@@ -145,7 +154,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     }
 
     return response.json();
-  }, [session?.access_token]);
+  }, []);
 
   const refreshBillingStatus = useCallback(async () => {
     if (!user) {
